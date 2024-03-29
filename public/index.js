@@ -1,6 +1,34 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import {
+    getDatabase,
+    set,
+    ref,
+    update,
+    onValue
+} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
-const { createApp, ref } = Vue;
 const c = console.log.bind();
+const firebaseConfig = {
+    apiKey: "AIzaSyCKxEYUtxMrevfSLSRHKUHc7gKTSKBZ-Vg",
+    authDomain: "somsritshirt-ced49.firebaseapp.com",
+    databaseURL: "https://somsritshirt-ced49.firebaseio.com",
+    projectId: "somsritshirt-ced49",
+    storageBucket: "somsritshirt-ced49.appspot.com",
+    messagingSenderId: "99816736698",
+    appId: "1:99816736698:web:a5fb5f8f10194c8221ff83"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+const database = getDatabase(app);
+const { createApp } = Vue
 
 const vm = createApp({
     data() {
@@ -16,20 +44,124 @@ const vm = createApp({
             token:
                 "patUwun54PguoydSk.961825af2071bd0dc11c3fa5861a03c46b41cad4714ec3039b34f648ee418047",
             loading: true,
+            isLoggedIn: false,
+            user: {},
+            signOut: signOut(auth)
         };
     },
     methods: {
+        closeModal(modalId) {
+            document.getElementById(modalId).close();
+        },
+        setting(modalId) {
+            if (!this.user.verify_token) {
+                return alert("ตรวจสอบ Token ก่อน")
+            }
+
+            update(ref(database, `gantts/users/${this.user.uid}`), {
+                airtable_token: this.user.airtable_token
+            })
+                .then(() => {
+                    this.closeModal(modalId);
+                })
+                .catch((err) => {
+                    console.error(err)
+                    alert("เกิดปัญหาบางอย่าง At setting() > update()")
+                })
+        },
+        async verifyToken() {
+            if (!this.user.airtable_token) return alert("กรอก Token ก่อน")
+
+            const header = {
+                headers: {
+                    Authorization: `Bearer ${this.user.airtable_token}`
+                }
+            }
+            try {
+                const resp = await axios.get('https://api.airtable.com/v0/meta/whoami', header)
+
+                if (resp.data.id) {
+                    this.user.verify_token = true
+                    return
+                }
+            }
+            catch (err) {
+                const resp = err.response
+                if (resp.status == 401) {
+                    alert('Token ไม่ถูกต้อง ไม่สามารถเชื่อมต่อด้วย Token นี้ได้')
+                    return
+                }
+                alert('เกิดปัญหาระหว่างตรวจสอบ API Key')
+                console.error(err)
+            }
+        },
+        register(modalId) {
+            createUserWithEmailAndPassword(auth, this.user.email, this.user.password)
+                .then((userCredential) => {
+
+                    const user = userCredential.user;
+
+                    set(ref(database, 'gantts/users/' + user.uid), {
+                        email: user.email,
+                        airtable_token: 0
+                    }).catch((err) => {
+                        console.error(err)
+                        alert("เกิดปัญหาบางอย่าง At register() > set()")
+                    });
+                    this.closeModal(modalId);
+                })
+                .catch((err) => {
+                    if (err.customData._tokenResponse.error.message == 'EMAIL_EXISTS') {
+                        return alert("Email นี้ถูกใช้ไปแล้ว")
+                    }
+                    alert("เกิดปัญหาบางอย่าง At register()")
+                    console.error(err)
+                });
+        },
+        async fetchUserData() {
+            const starCountRef = ref(database, `gantts/users/${this.user.uid}`);
+            await onValue(starCountRef, (snapshot) => {
+                Object.assign(this.user, snapshot.val())
+                this.getGantt();
+            })
+        },
+        login(modalId) {
+            this.isLoading();
+            signInWithEmailAndPassword(auth, this.user.email, this.user.password).then((userCredential) => {
+                this.user.err = null
+                this.closeModal(modalId);
+                this.user.email = userCredential._tokenResponse.email
+                this.user.password = ""
+
+                this.fetchUserData();
+            }).catch(() => {
+                // console.error(err)
+                this.user.err = "อีเมลหรือรหัสผ่านผิด"
+            })
+        },
+        async checkAuth() {
+            this.isLoading();
+            await onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    this.user = user
+                    this.isLoggedIn = true
+                    this.fetchUserData();
+                } else {
+                    this.isLoaded();
+                }
+            });
+        },
         isLoading() {
             this.loading = true;
         },
         isLoaded() {
             this.loading = false;
         },
-        async getGantt() {
-            await axios(
+        getGantt() {
+            axios(
                 "https://api.airtable.com/v0/appjfqpEHmnEsozi9/tbl64GrdfhsMbqiJ0",
                 {
-                    headers: `Authorization: Bearer ${this.token}`,
+                    headers: `Authorization: Bearer ${this.user.airtable_token}`,
                 }
             )
                 .then((el) => {
@@ -86,7 +218,7 @@ const vm = createApp({
             this.isLoading();
             this.tabActive = g;
             axios(`https://api.airtable.com/v0/${g.base_id}/${g.table_id}`, {
-                headers: `Authorization: Bearer ${this.token}`,
+                headers: `Authorization: Bearer ${this.user.airtable_token}`,
             })
                 .then((el) => {
                     this.data = el.data.records.map((d) => {
@@ -157,7 +289,7 @@ const vm = createApp({
         },
         updateRecords() {
             const headers = {
-                Authorization: `Bearer ${this.token}`,
+                Authorization: `Bearer ${this.user.airtable_token}`,
                 "Content-Type": "application/json",
             };
             try {
@@ -186,8 +318,8 @@ const vm = createApp({
         },
     },
     async mounted() {
-        this.getGantt();
+        await this.checkAuth();
         this.renderCalendar();
         window.addEventListener("resize", () => this.windowResize());
     },
-}).mount("#app");
+}).mount("#app")
