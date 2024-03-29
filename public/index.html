@@ -72,7 +72,7 @@
           <ul class="menu w-80 min-h-full bg-white rounded-l-md">
             <div v-if="!isLoggedIn" class="flex items-center justify-center">
               <div
-                class="fixed top-1/2 h-full w-full"
+                class="fixed top-1/2 w-full"
                 style="margin-top: -50px"
               >
                 <div
@@ -256,11 +256,7 @@
                     </div>
                   </div>
                   <li class="tooltip" data-tip="ออกจากระบบ">
-                    <a
-                      class="p-2"
-                      id="sign-out"
-                      @click="signOut()"
-                    >
+                    <a class="p-2" id="sign-out" @click="signOut()">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -310,7 +306,7 @@
       <!-- MODAL -->
       <dialog id="login_modal" class="modal text-[#a52241]">
         <div class="modal-box">
-          <div class="flex justify-between">
+          <div class="flex justify-center">
             <span class="font-bold text-lg">Login เพื่อดู Gantt chart</span>
           </div>
           <form @submit.prevent="login('login_modal')">
@@ -320,6 +316,7 @@
                   >Email</span
                 >
                 <input
+                  type="email"
                   class="btn btn-sm input text-left cursor-text input-bordered join-item w-full text-black"
                   v-model="user.email"
                   placeholder="ช่องกรอก Email"
@@ -361,19 +358,19 @@
                     d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
                   />
                 </svg>
-                <input type="submit" value="Login" />
+                <input class="cursor-pointer" type="submit" value="Login" />
               </div>
             </div>
           </form>
         </div>
-        <form method="dialog" class="modal-backdrop">
+        <form method="dialog" class="modal-backdrop" @click="resetUserInput()">
           <button>close</button>
         </form>
       </dialog>
       <dialog id="register_modal" class="modal text-[#a52241]">
         <div class="modal-box">
-          <div class="flex justify-between">
-            <span class="font-bold text-lg">register เพื่อดู Gantt chart</span>
+          <div class="flex justify-center">
+            <span class="font-bold text-lg">Register เพื่อดู Gantt chart</span>
           </div>
           <form @submit.prevent="register('register_modal')">
             <div class="pt-4">
@@ -382,6 +379,7 @@
                   >Email</span
                 >
                 <input
+                  type="email"
                   class="btn btn-sm input text-left cursor-text input-bordered join-item w-full text-black"
                   v-model="user.email"
                   placeholder="ช่องกรอก Email"
@@ -403,7 +401,6 @@
                 />
               </div>
             </div>
-            <div v-if="user.err" class="pt-4 text-center">{{ user.err }}</div>
             <div class="grid mt-4">
               <div
                 class="btn btn-sm bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
@@ -423,12 +420,12 @@
                     d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
                   />
                 </svg>
-                <input type="submit" value="Register" />
+                <input class="cursor-pointer" type="submit" value="Register" />
               </div>
             </div>
           </form>
         </div>
-        <form method="dialog" class="modal-backdrop">
+        <form method="dialog" class="modal-backdrop" @click="resetUserInput()">
           <button>close</button>
         </form>
       </dialog>

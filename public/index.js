@@ -48,6 +48,9 @@ const vm = createApp({
         };
     },
     methods: {
+        resetUserInput() {
+            this.user = {}
+        },
         checkOldToken() {
             if (oldToken) {
                 this.user.airtable_token = oldToken
@@ -152,7 +155,7 @@ const vm = createApp({
 
                 this.fetchUserData();
             }).catch(() => {
-                // console.error(err)
+                this.isLoaded();
                 this.user.err = "อีเมลหรือรหัสผ่านผิด"
             })
         },
