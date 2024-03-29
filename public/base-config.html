@@ -28,43 +28,74 @@
       />
     </div>
     <div class="container mx-auto my-5 grid gap-8">
-      <div class="font-bold text-xl bg-neutral-800 p-3 rounded-lg text-white">
-        วิธีกำหนดข้อมูลให้ไปแสดงหน้า <a class="text-blue-600 underline" href="/" target="_blank" rel="noopener noreferrer">Somsri Gantt</a>
-      </div>
-      <span class="text-lg"
-        >การ Create token นี้ไว้ใช้สำหรับ
-        <strong>ระบุตัวตนของผู้ใช้</strong> ภายนอกเว็บของ Airtable
-        ว่าใครเรียกใช้หรือแก้ไขข้อมูลภายใน Base , Table , Field , Record
-        ที่บัญชีของผู้ใช้มีสิทธิ์เข้าถึง โดยสามารถเข้าไปที่
+      <div class="font-bold text-xl bg-[#a52241] p-3 rounded-lg text-white">
+        วิธีกำหนดข้อมูลให้ไปแสดงหน้า
         <a
-          class="text-blue-600 underline"
-          href="https://airtable.com/create/tokens"
+          class="text-yellow-300 hover:underline"
+          href="/"
           target="_blank"
           rel="noopener noreferrer"
-          >https://airtable.com/create/tokens</a
+          >Somsri Gantt</a
         >
-        แล้วทำตามขั้นตอนดังนี้</span
-      >
+      </div>
+      <span class="text-lg"
+        >หากคุณมีสิทธิ์เข้าถึง Workspace บน Airtable ของ Somsri Garment
+        สามารถเข้าไปกำหนดข้อมูลได้ที่
+        <a
+          class="text-blue-600 underline"
+          href="https://airtable.com/appjfqpEHmnEsozi9/tbl64GrdfhsMbqiJ0"
+          target="_blank"
+          rel="noopener noreferrer"
+          >https://airtable.com/appjfqpEHmnEsozi9/tbl64GrdfhsMbqiJ0</a
+        >
+      </span>
       <div>
-        <span class="text-lg bg-neutral-200 p-2 rounded-lg"
-          >1. คลิกที่ Create new token</span
-        >
-        <img class="border-2 rounded-lg w-full" src="./img/c1.png" />
+        <img class="border-2 rounded-lg w-full" src="./img/gc1.png" />
+      </div>
+      <div>
+        <img
+          class="border-2 rounded-lg w-full"
+          src="./img/gantt_link _tt.png"
+        />
+      </div>
+      <div class="text-lg bg-neutral-100 p-2 rounded-lg grid gap-2">
+        <p>ข้อมูลที่ต้องการหลัก ๆ จะมีดังนี้คือ</p>
+        <p class="ml-1">
+          - <strong>base_id</strong> บนเทเบิลที่ต้องการนำมาใช้งาน ในลิงค์ Url
+          ในภาพตัวอย่างด้านบน ช่องตามเส้นสีเขียวคือ ID ของ Base
+          ที่เรากำลังเปิดดูอยู่
+        </p>
+        <p class="ml-1">
+          - <strong>table_id</strong> ตามเส้นสีน้ำเงินคือ ID ของ Table
+          ที่เรากำลังเปิดดูอยู่
+        </p>
+        <p class="ml-1">
+          - <strong>base_name</strong> กับ <strong>table_name</strong>
+          ตามลูกษรสีเหลืองและสีน้ำเงิน
+        </p>
+        <p class="ml-1">
+          - <strong>button_name</strong> คือ ชื่อของปุ่มที่เราจะให้แสดงผลหน้า
+          Somsri Gantt
+        </p>
+        <p class="ml-1">
+          - <strong>field_name</strong> คือ ชื่อของฟิลด์ที่มีชื่อของแต่ละรายการ
+          ในภาพตัวอย่างกำหนดให้แสดงผลบน Gantt เป็นชื่อโปรเจกต์
+        </p>
+        <p class="ml-1">
+          - <strong>field_start</strong> คือ ชื่อของฟิลด์ที่มีข้อมูลเป็นวันที่
+          กำหนดให้เป็นจุดเริ่มต้นของแท่นกราฟบน Gantt
+        </p>
+        <p class="ml-1">
+          - <strong>field_end</strong> คือ ชื่อของฟิลด์ที่มีข้อมูลเป็นวันที่
+          กำหนดให้เป็นจุดจบของแท่นกราฟบน Gantt
+        </p>
       </div>
       <div>
         <span class="text-lg bg-neutral-200 p-2 rounded-lg"
-          >2. กำหนดชื่อที่ต้องการ แล้วคลิกที่ <strong>Add a scope</strong> กับ
-          <strong>Add a base</strong> และเลือกหัวข้อตามในกรอบสีแดง
-          หลังจากเลือกเสร็จให้คลิก <strong>Create token</strong></span
+          >ตามภาพตัวอย่างด้านล่างนี้ <strong>field_name</strong> คือชื่อโปรเจกต์ , <strong>field_start</strong>
+          คือจุดเริ่มต้นของแท่งกราฟ , <strong>field_end</strong> คือจุดจบของแท่งกราฟ</span
         >
-        <img class="border-2 rounded-lg w-full" src="./img/c2.png" />
-      </div>
-      <div>
-        <span class="text-lg bg-neutral-200 p-2 rounded-lg"
-          >3. จะปรากฎหน้าต่างแสดง Token ขึ้นมา ให้คลิกที่ปุ่ม Copy ตามภาพ
-          และคลิก Done ถือเป็นอันเสร็จสิ้นขั้นตอนการ Create token</span
-        >
-        <img class="border-2 rounded-lg w-full" src="./img/c3.png" />
+        <img class="border-2 rounded-lg w-full" src="./img/f1.png" />
       </div>
     </div>
   </body>

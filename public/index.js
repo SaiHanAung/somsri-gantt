@@ -29,6 +29,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const database = getDatabase(app);
 const { createApp } = Vue
+let oldToken
 
 const vm = createApp({
     data() {
@@ -41,15 +42,22 @@ const vm = createApp({
             ganttGroup: [],
             tabActive: null,
             event: null,
-            token:
-                "patUwun54PguoydSk.961825af2071bd0dc11c3fa5861a03c46b41cad4714ec3039b34f648ee418047",
             loading: true,
             isLoggedIn: false,
             user: {},
-            signOut: signOut(auth)
         };
     },
     methods: {
+        checkOldToken() {
+            if (oldToken) {
+                this.user.airtable_token = oldToken
+            }
+        },
+        signOut() {
+            signOut(auth)
+            this.user = {};
+            this.isLoggedIn = false
+        },
         closeModal(modalId) {
             document.getElementById(modalId).close();
         },
@@ -88,6 +96,9 @@ const vm = createApp({
             catch (err) {
                 const resp = err.response
                 if (resp.status == 401) {
+                    if (oldToken) {
+                        this.user.airtable_token = oldToken
+                    }
                     alert('Token ไม่ถูกต้อง ไม่สามารถเชื่อมต่อด้วย Token นี้ได้')
                     return
                 }
@@ -112,7 +123,8 @@ const vm = createApp({
                 })
                 .catch((err) => {
                     if (err.customData._tokenResponse.error.message == 'EMAIL_EXISTS') {
-                        return alert("Email นี้ถูกใช้ไปแล้ว")
+                        alert("Email นี้ถูกใช้ไปแล้ว")
+                        return
                     }
                     alert("เกิดปัญหาบางอย่าง At register()")
                     console.error(err)
@@ -122,7 +134,12 @@ const vm = createApp({
             const starCountRef = ref(database, `gantts/users/${this.user.uid}`);
             await onValue(starCountRef, (snapshot) => {
                 Object.assign(this.user, snapshot.val())
-                this.getGantt();
+                if (snapshot.val().airtable_token != 0) {
+                    oldToken = snapshot.val().airtable_token
+                    this.getGantt();
+                } else {
+                    this.isLoaded();
+                }
             })
         },
         login(modalId) {

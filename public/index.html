@@ -150,6 +150,7 @@
                   </g>
                 </svg>
                 <a
+                  id="base-config"
                   class="tooltip tooltip-left"
                   data-tip="วิธีกำหนดข้อมูลให้มาแสดงหน้านี้"
                   href="base-config.html"
@@ -240,19 +241,26 @@
             </div>
             <div class="flex items-center justify-center">
               <ul class="fixed bottom-2 menu-horizontal">
-                <div v-if="isLoggedIn" class="flex items-center justify-center">
+                <div
+                  v-if="isLoggedIn"
+                  class="flex items-center justify-center gap-2"
+                >
                   <div
                     class="dropdown dropdown-hover dropdown-top dropdown-end"
                   >
                     <span>{{ user.email }}</span>
                     <div
-                      class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box"
+                      class="dropdown-content z-[1] menu p-2 shadow bg-base-200 rounded-box min-w-max"
                     >
                       <span>UID : {{ user.uid }}</span>
                     </div>
                   </div>
                   <li class="tooltip" data-tip="ออกจากระบบ">
-                    <a @click="signOut; user = {}; isLoggedIn = false">
+                    <a
+                      class="p-2"
+                      id="sign-out"
+                      @click="signOut()"
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -269,8 +277,12 @@
                       </svg>
                     </a>
                   </li>
-                  <li>
-                    <a onclick="setting_modal.showModal()">
+                  <li class="tooltip" data-tip="ตั้งค่า">
+                    <a
+                      class="p-2"
+                      id="open_setting_modal"
+                      onclick="setting_modal.showModal()"
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -424,8 +436,9 @@
         <div class="modal-box">
           <div class="flex justify-between">
             <span class="font-bold text-lg">Setting เพื่อดู Gantt chart</span>
-            <div class="flex gap-1">
+            <div class="flex items-center gap-1">
               <a
+                id="create_token"
                 class="no-underline hover:underline"
                 href="https://airtable.com/create/tokens"
                 target="_blank"
@@ -433,6 +446,7 @@
                 >Create token</a
               >
               <a
+                id="how-to-create-token"
                 class="tooltip tooltip-left"
                 data-tip="วิธี Create token"
                 href="howto.html"
@@ -498,7 +512,7 @@
             </div>
           </form>
         </div>
-        <form method="dialog" class="modal-backdrop">
+        <form method="dialog" class="modal-backdrop" @click="checkOldToken()">
           <button>close</button>
         </form>
       </dialog>
