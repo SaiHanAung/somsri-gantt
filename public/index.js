@@ -38,7 +38,7 @@ const vm = createApp({
             projectName: null,
             blockStart: null,
             blockEnd: null,
-            gantt: null,
+            gantts: null,
             ganttGroup: [],
             tabActive: null,
             event: null,
@@ -48,6 +48,12 @@ const vm = createApp({
         };
     },
     methods: {
+        alert() {
+            let event
+            setTimeout(() => {
+                event = 'hide'
+            }, 2000);
+        },
         resetUserInput() {
             this.user = {}
         },
@@ -224,7 +230,7 @@ const vm = createApp({
                             });
                         });
 
-                        this.gantt = ganttGroup;
+                        this.gantts = ganttGroup;
                         return d.fields.base_id;
                     });
                     this.isLoaded();
@@ -241,13 +247,24 @@ const vm = createApp({
                 headers: `Authorization: Bearer ${this.user.airtable_token}`,
             })
                 .then((el) => {
+                    let groupBy
                     this.data = el.data.records.map((d) => {
                         this.projectName = d.fields[g.field_name];
                         this.blockStart = d.fields[g.field_start];
                         this.blockEnd = d.fields[g.field_end];
+                        let groupSort = g.group_sort;
+                        if (groupSort) {
+                            let groupArr = groupSort.split(',');
+                            Object.entries(groupArr).map((group, index) => {
+                                if (d.fields[g.field_group] == group[1]) {
+                                    groupBy = `${index + 1}. ${group[1]}`
+                                }
+                            })
+                        }
                         return {
                             id: d.id,
                             title: this.projectName,
+                            groupBy: groupBy || d.fields[g.field_group],
                             resourceId: d.id,
                             start: this.blockStart,
                             end: this.blockEnd,
@@ -281,13 +298,29 @@ const vm = createApp({
                     week: "รายสัปดาห์",
                     month: "รายเดือน",
                 },
-                resourceAreaHeaderContent: `${this.tabActive?.button_name || "ชื่อโปรเจกต์"
-                    }`,
+                slotMinTime: "08:00:00",
+                slotMaxTime: "18:00:00",
                 editable: true,
                 resources: this.data,
-                events: this.data,
-                resourceOrder: "start",
+                resourceAreaHeaderContent: `${this.tabActive?.button_name || "ชื่อโปรเจกต์"
+                    }`,
+                resourceLabelContent: function (info) {
+                    const sliceDate = (start, end) => {
+                        if (!start || !end) return ''
+                        const thaiDate = (date) => {
+                            const arrDate = new Date(date).toLocaleDateString('th').split("/")
+                            return `${arrDate[0]}/${arrDate[1]}`
+                        }
+                        return ` 📅 ${thaiDate(start)} ถึง ${thaiDate(end)}`
+                    }
+
+                    const { start, end } = info.resource._resource.extendedProps
+                    return { html: `${info.resource.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small>` }
+                },
+                resourceOrder: "groupBy,start",
+                resourceGroupField: 'groupBy',
                 displayEventTime: false,
+                events: this.data,
                 eventColor: "#a52241",
                 eventResize: function (info) {
                     const { startStr, endStr, id, title } = info.event;
@@ -323,6 +356,9 @@ const vm = createApp({
                     },
                     { headers }
                 );
+                update(ref(database, `gantts/users/${this.user.uid}`), {
+                    airtable_update_data_at: new Date().toLocaleDateString('th') + " " + new Date().toLocaleTimeString('th')
+                })
             } catch (err) {
                 alert("เกิดปัญหาบางอย่างขึ้น At updateRecords()");
                 console.error(err);
@@ -341,5 +377,14 @@ const vm = createApp({
         await this.checkAuth();
         this.renderCalendar();
         window.addEventListener("resize", () => this.windowResize());
+
+        onValue(ref(database, `gantts/users`), () => {
+            if (this.tabActive) {
+                setTimeout(() => {
+                    this.showGantt(this.tabActive)
+                }, 500);
+            }
+        })
+        // window.addEventListener('focus', () => this.showGantt(this.tabActive));
     },
 }).mount("#app")

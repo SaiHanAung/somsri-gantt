@@ -17,16 +17,6 @@
     />
   </head>
   <body>
-    <div
-      class="fixed top-0 left-0 w-full h-full flex items-center justify-center"
-      style="z-index: -1"
-    >
-      <img
-        src="https://www.jobbkk.com/upload/employer/0B/ACB/02EACB/images/191179.webp?1356.3000000715256"
-        width="700"
-        class="opacity-25"
-      />
-    </div>
     <div class="container mx-auto my-5 grid gap-8">
       <div class="font-bold text-xl bg-[#a52241] p-3 rounded-lg text-white">
         วิธีกำหนดข้อมูลให้ไปแสดงหน้า
@@ -87,6 +77,15 @@
         <p class="ml-1">
           - <strong>field_end</strong> คือ ชื่อของฟิลด์ที่มีข้อมูลเป็นวันที่
           กำหนดให้เป็นจุดจบของแท่นกราฟบน Gantt
+        </p>
+        <p class="ml-1">
+          - <strong>field_group</strong> คือ ชื่อของฟิลด์ที่แบ่งกลุ่มข้อมูล เช่น
+          ทีมตัด
+        </p>
+        <p class="ml-1">
+          - <strong>group_sort</strong> คือ ชื่อการเรียงลำดับการแสดงผลของกลุ่ม
+          โดยสามารถจัดกลุ่มก่อนหลังตามลำดับได้โดยการวาง<strong>ชื่อกลุ่ม</strong>ตามด้วยเครื่องหมาย
+          <strong>,</strong> ต่อกันไปเรื่อย ๆ เช่นกลุ่มทีมตัด ตัวอย่าง,วางมาร์ค,ตัดบน,ตัดล่าง ในหน้าแสดงผลข้อมูลก็จะถูกจัดเรียงข้อมูลตามลำดับชื่อที่ได้กำหนดตามตัวอย่างนี้
         </p>
       </div>
       <div>
