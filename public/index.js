@@ -45,15 +45,21 @@ const vm = createApp({
             loading: true,
             isLoggedIn: false,
             user: {},
+            toast: Swal.mixin({
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            }),
+            filters: [],
         };
     },
     methods: {
-        alert() {
-            let event
-            setTimeout(() => {
-                event = 'hide'
-            }, 2000);
-        },
         resetUserInput() {
             this.user = {}
         },
@@ -72,7 +78,10 @@ const vm = createApp({
         },
         setting(modalId) {
             if (!this.user.verify_token) {
-                return alert("ตรวจสอบ Token ก่อน")
+                return this.toast.fire({
+                    icon: "warning",
+                    title: "ตรวจสอบ Token ก่อน"
+                });
             }
 
             update(ref(database, `gantts/users/${this.user.uid}`), {
@@ -83,11 +92,19 @@ const vm = createApp({
                 })
                 .catch((err) => {
                     console.error(err)
-                    alert("เกิดปัญหาบางอย่าง At setting() > update()")
+                    this.toast.fire({
+                        icon: "error",
+                        title: "เกิดปัญหาบางอย่างที่ setting() > update()"
+                    });
                 })
         },
         async verifyToken() {
-            if (!this.user.airtable_token) return alert("กรอก Token ก่อน")
+            if (!this.user.airtable_token) {
+                return this.toast.fire({
+                    icon: "warning",
+                    title: "กรอก Token ก่อน"
+                });
+            }
 
             const header = {
                 headers: {
@@ -103,15 +120,13 @@ const vm = createApp({
                 }
             }
             catch (err) {
-                const resp = err.response
-                if (resp.status == 401) {
-                    if (oldToken) {
-                        this.user.airtable_token = oldToken
-                    }
-                    alert('Token ไม่ถูกต้อง ไม่สามารถเชื่อมต่อด้วย Token นี้ได้')
-                    return
+                if (oldToken) {
+                    this.user.airtable_token = oldToken
                 }
-                alert('เกิดปัญหาระหว่างตรวจสอบ API Key')
+                this.toast.fire({
+                    icon: "error",
+                    title: "Token ไม่ถูกต้อง ไม่สามารถเชื่อมต่อด้วย Token นี้ได้"
+                });
                 console.error(err)
             }
         },
@@ -126,16 +141,24 @@ const vm = createApp({
                         airtable_token: 0
                     }).catch((err) => {
                         console.error(err)
-                        alert("เกิดปัญหาบางอย่าง At register() > set()")
+                        this.toast.fire({
+                            icon: "error",
+                            title: "เกิดปัญหาบางอย่างที่ register() > set()"
+                        });
                     });
                     this.closeModal(modalId);
                 })
                 .catch((err) => {
                     if (err.customData._tokenResponse.error.message == 'EMAIL_EXISTS') {
-                        alert("Email นี้ถูกใช้ไปแล้ว")
-                        return
+                        return this.toast.fire({
+                            icon: "warning",
+                            title: "Email นี้ถูกใช้ไปแล้ว"
+                        });
                     }
-                    alert("เกิดปัญหาบางอย่าง At register()")
+                    this.toast.fire({
+                        icon: "error",
+                        title: "เกิดปัญหาบางอย่างที่ register()"
+                    });
                     console.error(err)
                 });
         },
@@ -199,9 +222,10 @@ const vm = createApp({
                             0
                         ) {
                             ganttGroup.push({
+                                record_id: d.id,
                                 base_id: d.fields.base_id,
                                 base_name: d.fields.base_name,
-                                tables: [],
+                                tables: []
                             });
                         }
 
@@ -230,51 +254,58 @@ const vm = createApp({
                             });
                         });
 
-                        this.gantts = ganttGroup;
                         return d.fields.base_id;
                     });
+                    this.gantts = ganttGroup;
                     this.isLoaded();
                 })
                 .catch((err) => {
-                    alert("เกิดปัญหาบางอย่างขึ้น At getGantt()");
+                    this.toast.fire({
+                        icon: "error",
+                        title: "เกิดปัญหาบางอย่างขึ้นที่ getGantt()"
+                    });
                     console.error(err);
                 });
         },
         showGantt(g) {
             this.isLoading();
-            this.tabActive = g;
             axios(`https://api.airtable.com/v0/${g.base_id}/${g.table_id}`, {
                 headers: `Authorization: Bearer ${this.user.airtable_token}`,
             })
                 .then((el) => {
                     let groupBy
-                    this.data = el.data.records.map((d) => {
-                        this.projectName = d.fields[g.field_name];
-                        this.blockStart = d.fields[g.field_start];
-                        this.blockEnd = d.fields[g.field_end];
-                        let groupSort = g.group_sort;
-                        if (groupSort) {
-                            let groupArr = groupSort.split(',');
-                            Object.entries(groupArr).map((group, index) => {
-                                if (d.fields[g.field_group] == group[1]) {
-                                    groupBy = `${index + 1}. ${group[1]}`
-                                }
-                            })
-                        }
-                        return {
-                            id: d.id,
-                            title: this.projectName,
-                            groupBy: groupBy || d.fields[g.field_group],
-                            resourceId: d.id,
-                            start: this.blockStart,
-                            end: this.blockEnd,
-                        };
-                    });
+                    this.data = el.data.records.filter(record => record.fields[g.field_group])
+                        .map((d) => {
+                            this.projectName = d.fields[g.field_name];
+                            this.blockStart = d.fields[g.field_start];
+                            this.blockEnd = d.fields[g.field_end];
+                            let groupSort = g.group_sort;
+                            if (groupSort) {
+                                let groupArr = groupSort.split(',');
+                                Object.entries(groupArr).map((group, index) => {
+                                    if (d.fields[g.field_group] == group[1]) {
+                                        groupBy = `${index + 1}. ${group[1]}`
+                                    }
+                                })
+                            }
+                            return {
+                                id: d.id,
+                                title: this.projectName,
+                                groupBy: groupBy || d.fields[g.field_group],
+                                resourceId: d.id,
+                                start: this.blockStart,
+                                end: this.blockEnd,
+                                fields: d.fields
+                            };
+                        });
                     this.isLoaded();
                     this.renderCalendar();
                 })
                 .catch((err) => {
-                    alert("เกิดปัญหาบางอย่างขึ้น At showGantt()");
+                    this.toast.fire({
+                        icon: "error",
+                        title: "เกิดปัญหาบางอย่างขึ้นที่ showGantt()"
+                    });
                     console.error(err);
                 });
         },
@@ -301,9 +332,17 @@ const vm = createApp({
                 slotMinTime: "08:00:00",
                 slotMaxTime: "18:00:00",
                 editable: true,
-                resources: this.data,
-                resourceAreaHeaderContent: `${this.tabActive?.button_name || "ชื่อโปรเจกต์"
-                    }`,
+                resources: this.filteredData,
+                // resourceAreaHeaderContent: `${this.tabActive?.button_name || "ชื่อโปรเจกต์"
+                //     }`,
+                resourceAreaHeaderContent: {
+                    html: `<div class="flex items-center gap-1">
+                            ${vm.tabActive?.button_name ? '<small class="btn btn-sm btn-circle btn-ghost" onclick="filter_modal.showModal()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" /></svg></small>' : ''}
+                            <span>${vm.tabActive?.button_name || "ชื่อโปรเจกต์"}</span>
+                        </div>
+                        `
+                },
+                // resourceAreaHeaderContent: (info) => c(info),
                 resourceLabelContent: function (info) {
                     const sliceDate = (start, end) => {
                         if (!start || !end) return ''
@@ -320,7 +359,7 @@ const vm = createApp({
                 resourceOrder: "groupBy,start",
                 resourceGroupField: 'groupBy',
                 displayEventTime: false,
-                events: this.data,
+                events: this.filteredData,
                 eventColor: "#a52241",
                 eventResize: function (info) {
                     const { startStr, endStr, id, title } = info.event;
@@ -339,6 +378,33 @@ const vm = createApp({
 
             calendar.setOption("locale", "th");
             calendar.render();
+        },
+        saveFilter() {
+            const headers = {
+                Authorization: `Bearer ${this.user.airtable_token}`,
+                "Content-Type": "application/json",
+            };
+            try {
+                axios.patch(`https://api.airtable.com/v0/appjfqpEHmnEsozi9/tbl64GrdfhsMbqiJ0/${this.tabActive.record_id}`,
+                    {
+                        fields: { conditions: JSON.stringify(this.filters) },
+                    },
+                    { headers }
+                ).then((valUpdate) => {
+                    this.closeModal('filter_modal')
+                    
+                    const { id, fields } = valUpdate.data
+                    this.tabActive = fields
+                    this.tabActive.record_id = id
+                    this.showGantt(this.tabActive)
+                })
+            } catch (err) {
+                this.toast.fire({
+                    icon: "error",
+                    title: "เกิดปัญหาบางอย่างขึ้นที่ saveFilter()"
+                });
+                console.error(err);
+            }
         },
         updateRecords() {
             const headers = {
@@ -360,7 +426,10 @@ const vm = createApp({
                     airtable_update_data_at: new Date().toLocaleDateString('th') + " " + new Date().toLocaleTimeString('th')
                 })
             } catch (err) {
-                alert("เกิดปัญหาบางอย่างขึ้น At updateRecords()");
+                this.toast.fire({
+                    icon: "error",
+                    title: "เกิดปัญหาบางอย่างขึ้นที่ updateRecords()"
+                });
                 console.error(err);
             }
         },
@@ -373,18 +442,52 @@ const vm = createApp({
             return size;
         },
     },
+    computed: {
+        filteredData() {
+            let filtersParse
+            if (this.tabActive?.conditions) {
+                filtersParse = JSON.parse(this.tabActive.conditions.replace(/\\/g, ''))
+                this.filters = filtersParse
+            }
+
+            return this.data?.filter(d => {
+                if (!filtersParse) return d
+                return filtersParse.every(f => {
+                    const fieldValue = d.fields[f.field_name];
+                    const condition = f.condition;
+                    const value = f.value;
+                    switch (condition) {
+                        case "=":
+                            return fieldValue == value;
+                        case "!=":
+                            return fieldValue != value;
+                        case ">":
+                            return fieldValue > value;
+                        case ">=":
+                            return fieldValue >= value;
+                        case "<":
+                            return fieldValue < value;
+                        case "<=":
+                            return fieldValue <= value;
+                        default:
+                            return d;
+                    }
+                });
+            })
+        }
+    },
     async mounted() {
         await this.checkAuth();
         this.renderCalendar();
         window.addEventListener("resize", () => this.windowResize());
+        window.addEventListener("focus", () => this.showGantt(this.tabActive));
 
-        onValue(ref(database, `gantts/users`), () => {
-            if (this.tabActive) {
-                setTimeout(() => {
-                    this.showGantt(this.tabActive)
-                }, 500);
-            }
-        })
-        // window.addEventListener('focus', () => this.showGantt(this.tabActive));
+        // onValue(ref(database, `gantts/users`), () => {
+        //     if (this.tabActive) {
+        //         setTimeout(() => {
+        //             this.showGantt(this.tabActive)
+        //         }, 1000);
+        //     }
+        // })
     },
 }).mount("#app")

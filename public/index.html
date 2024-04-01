@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@6.1.11/index.global.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="style.css" />
     <link
       rel="icon"
@@ -26,22 +27,6 @@
   </head>
   <body>
     <div id="app">
-      <!-- <div role="alert" :class="['absolute top-3 right-3 z-50 max-w-fit alert alert-warning', alert()]">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="stroke-current shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
-        <span>Warning: Invalid email address!</span>
-      </div> -->
       <span
         v-if="loading"
         class="loading loading-spinner loading-lg absolute left-1/2 top-1/2 z-50"
@@ -239,7 +224,7 @@
                             <li
                               v-for="(v, vi) in tb.views"
                               :key="'view_'+vi"
-                              @click="showGantt(v)"
+                              @click="showGantt(v); tabActive = v; tabActive.record_id = g.record_id;"
                               :class="{'bg-[#e5e5e5] rounded-lg': tabActive?.button_name == v.button_name}"
                             >
                               <a>{{v.button_name}}</a>
@@ -484,13 +469,13 @@
             <div class="pt-4">
               <div class="join w-full">
                 <input
-                  class="btn btn-sm input text-left cursor-text input-bordered join-item w-full text-black"
+                  class="btn input text-left cursor-text input-bordered join-item w-full text-black"
                   v-model="user.airtable_token"
                   placeholder="ช่องกรอก Airtable token"
                   required
                 />
                 <span
-                  :class="['btn btn-sm join-item rounded-l-full', {'bg-green-500 text-white': user.verify_token}]"
+                  :class="['btn join-item rounded-l-full', {'bg-green-500 text-white': user.verify_token}]"
                   @click="verifyToken()"
                 >
                   {{ !user.verify_token ? 'ตรวจสอบ Token' : 'Token ถูกต้อง' }}
@@ -500,7 +485,7 @@
             <div v-if="user.err" class="pt-4 text-center">{{ user.err }}</div>
             <div class="grid mt-4">
               <div
-                class="btn btn-sm bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
+                class="btn bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
                 @click="setting('setting_modal')"
               >
                 <svg
@@ -509,7 +494,7 @@
                   viewBox="0 0 24 24"
                   stroke-width="1.5"
                   stroke="currentColor"
-                  class="w-5 h-5"
+                  class="w-6 h-6"
                 >
                   <path
                     stroke-linecap="round"
@@ -523,6 +508,115 @@
           </form>
         </div>
         <form method="dialog" class="modal-backdrop" @click="checkOldToken()">
+          <button>close</button>
+        </form>
+      </dialog>
+      <dialog id="filter_modal" class="modal text-[#a52241]">
+        <div class="modal-box min-w-max">
+          <div class="flex justify-between">
+            <span class="font-bold text-lg"
+              >เพิ่มเงื่อนไขตัวกรองข้อมูล {{ tabActive?.button_name }}</span
+            >
+          </div>
+          <form @submit.prevent="saveFilter()">
+            <template v-for="(f, fi) in filters" :key="'filter_' + fi">
+              <div class="pt-4 flex items-center gap-2">
+                <div v-if="fi > 0">และ</div>
+                <div class="join">
+                  <div>
+                    <div>
+                      <input
+                        v-model="f.field_name"
+                        class="input input-bordered join-item"
+                        placeholder="ชื่อฟิลด์"
+                      />
+                    </div>
+                  </div>
+                  <select
+                    v-model="f.condition"
+                    class="select select-bordered join-item"
+                  >
+                    <option disabled selected>เงื่อนไข</option>
+                    <option value="=">เท่ากับ</option>
+                    <option value="!=">ไม่เท่ากับ</option>
+                  </select>
+                  <div>
+                    <div>
+                      <input
+                        v-model="f.value"
+                        class="input input-bordered join-item"
+                        placeholder="ค่า"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-7 h-7 btn btn-sm btn-circle btn-ghost"
+                  @click="filters.splice(fi, 1)"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+            </template>
+            <div class="grid grid-cols-2 gap-5 mt-4">
+              <div
+                class="btn bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
+                @click="filters.push({field_name: '', condition: 'เงื่อนไข', value: ''})"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+
+                <input
+                  class="cursor-pointer"
+                  type="button"
+                  value="เพิ่มเงื่อนไข"
+                />
+              </div>
+              <div
+                class="btn bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
+                @click="saveFilter()"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"
+                  />
+                </svg>
+                <input class="cursor-pointer" type="submit" value="บันทึก" />
+              </div>
+            </div>
+          </form>
+        </div>
+        <form method="dialog" class="modal-backdrop">
           <button>close</button>
         </form>
       </dialog>
