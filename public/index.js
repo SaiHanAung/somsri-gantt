@@ -337,7 +337,7 @@ const vm = createApp({
                 //     }`,
                 resourceAreaHeaderContent: {
                     html: `<div class="flex items-center gap-1">
-                            ${vm.tabActive?.button_name ? '<small class="btn btn-sm btn-circle btn-ghost" onclick="filter_modal.showModal()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" /></svg></small>' : ''}
+                            ${vm.tabActive?.button_name ? `<small class="px-1 btn btn-sm btn-ghost ${vm.filters.length > 0 ? 'bg-[#a52241] hover:bg-rose-900 text-white' : ''}" onclick="filter_modal.showModal()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" /></svg></small>` : ''}
                             <span>${vm.tabActive?.button_name || "ชื่อโปรเจกต์"}</span>
                         </div>
                         `
@@ -392,7 +392,7 @@ const vm = createApp({
                     { headers }
                 ).then((valUpdate) => {
                     this.closeModal('filter_modal')
-                    
+
                     const { id, fields } = valUpdate.data
                     this.tabActive = fields
                     this.tabActive.record_id = id
@@ -441,39 +441,47 @@ const vm = createApp({
 
             return size;
         },
+        addFilter() {
+            if (this.filters.length == 0) return this.filters.push({ field_name: '', operator: '=', value: '' })
+            this.filters.push({ field_name: '', operator: '=', value: '', more: 'OR' })
+        }
     },
     computed: {
         filteredData() {
-            let filtersParse
-            if (this.tabActive?.conditions) {
-                filtersParse = JSON.parse(this.tabActive.conditions.replace(/\\/g, ''))
-                this.filters = filtersParse
+            let conditions
+            if (this.tabActive?.conditions && this.tabActive.conditions !== "\n") {
+                conditions = JSON.parse(this.tabActive.conditions.replace(/\\/g, ''))
+                this.filters = conditions
+            } else {
+                this.filters = []
             }
 
-            return this.data?.filter(d => {
-                if (!filtersParse) return d
-                return filtersParse.every(f => {
-                    const fieldValue = d.fields[f.field_name];
-                    const condition = f.condition;
-                    const value = f.value;
-                    switch (condition) {
-                        case "=":
-                            return fieldValue == value;
-                        case "!=":
-                            return fieldValue != value;
-                        case ">":
-                            return fieldValue > value;
-                        case ">=":
-                            return fieldValue >= value;
-                        case "<":
-                            return fieldValue < value;
-                        case "<=":
-                            return fieldValue <= value;
-                        default:
-                            return d;
-                    }
-                });
-            })
+            function filterData(datas, conditions) {
+                if (!conditions || conditions.length === 0) return datas;
+
+                return datas.filter(d => {
+                    if (!conditions) return d;
+                    const results = conditions.map(condition => {
+                        if (condition.more === "OR") {
+                            return d.fields[condition.field_name] == condition.value;
+                        } else {
+                            switch (condition.operator) {
+                                case '=':
+                                    return d.fields[condition.field_name] == condition.value;
+                                case '!=':
+                                    return d.fields[condition.field_name] != condition.value;
+                                default:
+                                    return true;
+                            }
+                        }
+                    })
+                    return results.includes(true);
+                })
+
+            }
+
+            const filteredData = filterData(this.data, conditions);
+            return filteredData
         }
     },
     async mounted() {
@@ -481,13 +489,5 @@ const vm = createApp({
         this.renderCalendar();
         window.addEventListener("resize", () => this.windowResize());
         window.addEventListener("focus", () => this.showGantt(this.tabActive));
-
-        // onValue(ref(database, `gantts/users`), () => {
-        //     if (this.tabActive) {
-        //         setTimeout(() => {
-        //             this.showGantt(this.tabActive)
-        //         }, 1000);
-        //     }
-        // })
     },
 }).mount("#app")
