@@ -35,9 +35,6 @@ const vm = createApp({
     data() {
         return {
             data: null,
-            projectName: null,
-            blockStart: null,
-            blockEnd: null,
             gantts: null,
             ganttGroup: [],
             tabActive: null,
@@ -277,9 +274,10 @@ const vm = createApp({
                     let groupBy
                     this.data = el.data.records.filter(record => record.fields[g.field_group])
                         .map((d) => {
-                            this.projectName = d.fields[g.field_name];
-                            this.blockStart = d.fields[g.field_start];
-                            this.blockEnd = d.fields[g.field_end];
+                            c("showGantt ", d)
+                            const projectName = d.fields[g.field_name];
+                            const blockStart = d.fields[g.field_start];
+                            const blockEnd = d.fields[g.field_end];
                             let groupSort = g.group_sort;
                             if (groupSort) {
                                 let groupArr = groupSort.split(',');
@@ -292,11 +290,11 @@ const vm = createApp({
 
                             return {
                                 id: d.id,
-                                title: this.projectName,
+                                title: projectName,
                                 groupBy: groupBy || d.fields[g.field_group],
                                 resourceId: d.id,
-                                start: this.blockStart,
-                                end: this.blockEnd,
+                                start: blockStart,
+                                end: blockEnd,
                                 fields: d.fields
                             };
                         });
@@ -401,6 +399,7 @@ const vm = createApp({
                     },
                     { headers }
                 ).then((valUpdate) => {
+                    this.getGantt();
                     this.closeModal('filter_modal')
 
                     const { id, fields } = valUpdate.data
@@ -459,6 +458,7 @@ const vm = createApp({
     computed: {
         filteredData() {
             let conditions
+            c("this.tabActive", this.tabActive)
             if (this.tabActive?.conditions && this.tabActive.conditions !== "\n") {
                 conditions = JSON.parse(this.tabActive.conditions.replace(/\\/g, ''))
                 this.filters = conditions
