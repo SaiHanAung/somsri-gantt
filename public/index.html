@@ -224,7 +224,7 @@
                             <li
                               v-for="(v, vi) in tb.views"
                               :key="'view_'+vi"
-                              @click="showGantt(v); tabActive = v; tabActive.record_id = g.record_id;"
+                              @click="showGantt(v);"
                               :class="{'bg-[#e5e5e5] rounded-lg': tabActive?.button_name == v.button_name}"
                             >
                               <a>{{v.button_name}}</a>
@@ -572,7 +572,7 @@
                 </svg>
               </div>
             </template>
-            <div class="grid grid-cols-2 gap-5 mt-4">
+            <div :class="['grid gap-5 mt-4', {'grid-cols-2': filters.length > 0}]">
               <div
                 class="btn bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
                 @click="addFilter()"
@@ -600,6 +600,7 @@
               </div>
               <div
                 class="btn bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
+                v-if="filters.length > 0"
                 @click="saveFilter()"
               >
                 <svg

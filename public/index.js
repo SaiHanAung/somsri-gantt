@@ -222,7 +222,6 @@ const vm = createApp({
                             0
                         ) {
                             ganttGroup.push({
-                                record_id: d.id,
                                 base_id: d.fields.base_id,
                                 base_name: d.fields.base_name,
                                 tables: []
@@ -249,7 +248,8 @@ const vm = createApp({
                                     ) < 0 &&
                                     gg.base_id == d.fields.base_id
                                 ) {
-                                    tb.views.push(d.fields);
+                                    const mergeObj = Object.assign({}, { record_id: d.id }, d.fields)
+                                    tb.views.push(mergeObj);
                                 }
                             });
                         });
@@ -268,6 +268,7 @@ const vm = createApp({
                 });
         },
         showGantt(g) {
+            this.tabActive = g;
             this.isLoading();
             axios(`https://api.airtable.com/v0/${g.base_id}/${g.table_id}`, {
                 headers: `Authorization: Bearer ${this.user.airtable_token}`,
@@ -288,6 +289,7 @@ const vm = createApp({
                                     }
                                 })
                             }
+
                             return {
                                 id: d.id,
                                 title: this.projectName,
@@ -298,6 +300,7 @@ const vm = createApp({
                                 fields: d.fields
                             };
                         });
+                    this.filteredData
                     this.isLoaded();
                     this.renderCalendar();
                 })
@@ -380,6 +383,13 @@ const vm = createApp({
             calendar.render();
         },
         saveFilter() {
+            if (this.filters.some(f => f.field_name == null || f.field_name == '')) {
+                return this.toast.fire({
+                    icon: "warning",
+                    title: "อย่างน้อยต้องกรอกชื่อฟิลด์ก่อนบันทึก"
+                });
+            }
+
             const headers = {
                 Authorization: `Bearer ${this.user.airtable_token}`,
                 "Content-Type": "application/json",
