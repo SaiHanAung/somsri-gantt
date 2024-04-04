@@ -201,8 +201,8 @@
                       </div>
                       {{ g.base_name }}
                     </summary>
-                    <ul v-for="tb in g.tables" :key="'table_'+tb.table_id">
-                      <li>
+                    <ul>
+                      <li v-for="tb in g.tables" :key="'table_'+tb.table_id">
                         <details open>
                           <summary>
                             <div class="tooltip" data-tip="ชื่อ Table">
@@ -226,7 +226,7 @@
                           <ul>
                             <li
                               v-for="(v, vi) in tb.views"
-                              :key="'view_'+vi"
+                              :key="'view_' + vi + v.button_name"
                               @click="showGantt(v);"
                               :class="{'bg-[#e5e5e5] rounded-lg': tabActive?.button_name == v.button_name}"
                             >
@@ -532,7 +532,11 @@
                 </div>
                 <div class="join flex items-center">
                   <div class="dropdown join-item">
-                    <div tabindex="0" role="button" class="btn btn-ghost border-1 border-r-0 border-inherit rounded-e-none">
+                    <div
+                      tabindex="0"
+                      role="button"
+                      class="btn btn-ghost border-1 border-r-0 border-inherit rounded-e-none"
+                    >
                       {{ f.field_name }}
                     </div>
                     <ul
@@ -596,7 +600,7 @@
               </div>
             </template>
             <div
-              :class="['grid gap-5 mt-4', filters.length !== 2 ? {'grid-cols-2': filters.length > 0} : '']"
+              :class="['grid gap-5 mt-4', {'grid-cols-2' : filters.length !== 2}]"
             >
               <div
                 v-if="filters.length < 2"
@@ -626,7 +630,6 @@
               </div>
               <div
                 class="btn bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
-                v-if="filters.length > 0"
                 @click="saveFilter()"
               >
                 <svg

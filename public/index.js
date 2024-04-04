@@ -268,6 +268,7 @@ const vm = createApp({
                 });
         },
         showGantt(g) {
+            if (!g) return
             this.tabActive = g;
             this.isLoading();
             axios(`https://api.airtable.com/v0/${g.base_id}/${g.table_id}`, {
