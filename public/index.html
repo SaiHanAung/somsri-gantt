@@ -24,6 +24,9 @@
       rel="stylesheet"
       type="text/css"
     />
+
+    <script src="vue-select.umd.js"></script>
+    <link rel="stylesheet" href="vue-select.css" />
   </head>
   <body>
     <div id="app">
@@ -518,7 +521,7 @@
               >เพิ่มเงื่อนไขตัวกรองข้อมูล {{ tabActive?.button_name }}</span
             >
           </div>
-          <form @submit.prevent="saveFilter()" class="text-black">
+          <form @submit.prevent="saveFilter()" class="text-black h-80">
             <template v-for="(f, fi) in filters" :key="'filter_' + fi">
               <div class="pt-4 flex items-center gap-2">
                 <div v-if="fi > 0">
@@ -527,15 +530,35 @@
                     <option value="OR">หรือ</option>
                   </select>
                 </div>
-                <div class="join">
-                  <div>
-                    <div>
-                      <input
-                        v-model="f.field_name"
-                        class="input input-bordered join-item"
-                        placeholder="ชื่อฟิลด์"
-                      />
+                <div class="join flex items-center">
+                  <div class="dropdown join-item">
+                    <div tabindex="0" role="button" class="btn btn-ghost border-1 border-r-0 border-inherit rounded-e-none">
+                      {{ f.field_name }}
                     </div>
+                    <ul
+                      tabindex="0"
+                      class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 h-44 grid content-start"
+                    >
+                      <li>
+                        <a>
+                          <input
+                            type="text"
+                            placeholder="ค้นหา"
+                            v-model="searchField"
+                            class="input input-bordered input-xs w-full max-w-xs"
+                          />
+                        </a>
+                      </li>
+                      <div class="overflow-x-scroll">
+                        <li
+                          v-for="fs in filteredSearchField"
+                          :key="'li_radio_' + fs"
+                          @click="f.field_name = fs"
+                        >
+                          <a>{{ fs }}</a>
+                        </li>
+                      </div>
+                    </ul>
                   </div>
                   <select
                     v-model="f.operator"
@@ -572,8 +595,11 @@
                 </svg>
               </div>
             </template>
-            <div :class="['grid gap-5 mt-4', {'grid-cols-2': filters.length > 0}]">
+            <div
+              :class="['grid gap-5 mt-4', filters.length !== 2 ? {'grid-cols-2': filters.length > 0} : '']"
+            >
               <div
+                v-if="filters.length < 2"
                 class="btn bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
                 @click="addFilter()"
               >
