@@ -218,7 +218,7 @@ const vm = createApp({
             )
                 .then((el) => {
                     const ganttGroup = [];
-                    el.data.records.map((d) => {
+                    el.data.records.forEach((d) => {
                         if (
                             d.fields.base_id &&
                             ganttGroup.findIndex((g) => g.base_id == d.fields.base_id) <
@@ -231,12 +231,11 @@ const vm = createApp({
                             });
                         }
 
-                        ganttGroup.map((gg) => {
+                        ganttGroup.forEach((gg) => {
                             if (
                                 gg.tables.findIndex(
                                     (tb) => tb.table_id == d.fields.table_id
-                                ) < 0 &&
-                                gg.base_id == d.fields.base_id
+                                ) < 0
                             ) {
                                 gg.tables.push({
                                     table_id: d.fields.table_id,
@@ -244,20 +243,18 @@ const vm = createApp({
                                     views: [],
                                 });
                             }
-                            gg.tables.map((tb) => {
+
+                            gg.tables.forEach((tb) => {
                                 if (
                                     tb.views.findIndex(
                                         (tb) => tb.button_name == d.fields.button_name
-                                    ) < 0 &&
-                                    gg.base_id == d.fields.base_id
+                                    ) < 0 && tb.table_id == d.fields.table_id
                                 ) {
                                     const mergeObj = Object.assign({}, { record_id: d.id }, d.fields)
                                     tb.views.push(mergeObj);
                                 }
                             });
                         });
-
-                        return d.fields.base_id;
                     });
                     this.gantts = ganttGroup;
                     this.isLoaded();
@@ -371,7 +368,35 @@ const vm = createApp({
                 displayEventTime: false,
                 events: this.filteredData,
                 eventColor: "#a52241",
-                eventResize: function (info) {
+                eventResize: async function (info) {
+                    const { startStr, endStr, id, title } = info.event;
+                    const startStrOld = info.oldEvent.startStr;
+                    const endStrOld = info.oldEvent.endStr;
+                    vm.event = {
+                        id: id,
+                        name: title,
+                        start: startStr,
+                        end: endStr,
+                    };
+
+                    if (!vm.tabActive.field_end) {
+                        if (startStrOld != startStr) {
+                            vm.toast.fire({
+                                icon: "warning",
+                                title: "ไม่มีข้อมูลของวันที่จบ(field_end) จึงทำให้แท่งกราฟอิงตามวันที่เริ่ม(field_start)"
+                            });
+                            await vm.updateRecords();
+                            vm.showGantt(vm.tabActive)
+                        } else if (endStrOld != endStr) {
+                            info.revert();
+                            return vm.toast.fire({
+                                icon: "error",
+                                title: "ไม่สามารถ Update ได้เนื่องจากไม่มีข้อมูลของวันที่จบ(field_end)"
+                            });
+                        }
+                    }
+                },
+                eventDrop: function (info) {
                     const { startStr, endStr, id, title } = info.event;
                     vm.event = {
                         id: id,
@@ -379,10 +404,8 @@ const vm = createApp({
                         start: startStr,
                         end: endStr,
                     };
+
                     vm.updateRecords();
-                },
-                eventDrop: function (info) {
-                    info.revert();
                 },
             });
 
@@ -434,20 +457,19 @@ const vm = createApp({
                 Authorization: `Bearer ${this.user.airtable_token}`,
                 "Content-Type": "application/json",
             };
+            const onlyStartUpdate = !this.tabActive.field_end ? { [this.tabActive.field_start]: this.event.start } : null
+
             try {
                 axios.patch(
                     `https://api.airtable.com/v0/${this.tabActive.base_id}/${this.tabActive.table_id}/${this.event.id}`,
                     {
-                        fields: {
+                        fields: onlyStartUpdate ? onlyStartUpdate : {
                             [this.tabActive.field_start]: this.event.start,
                             [this.tabActive.field_end]: this.event.end,
                         },
                     },
                     { headers }
-                );
-                update(ref(database, `gantts/users/${this.user.uid}`), {
-                    airtable_update_data_at: new Date().toLocaleDateString('th') + " " + new Date().toLocaleTimeString('th')
-                })
+                )
             } catch (err) {
                 this.toast.fire({
                     icon: "error",
