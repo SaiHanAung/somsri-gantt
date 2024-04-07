@@ -34,6 +34,8 @@ let oldToken
 const vm = createApp({
     data() {
         return {
+            projectGroups: [],
+            viewProject: {},
             searchField: '',
             fieldSelected: null,
             fieldOptions: [],
@@ -308,7 +310,6 @@ const vm = createApp({
                                 fields: d.fields
                             };
                         });
-                    this.filteredData
                     this.isLoaded();
                     this.renderCalendar();
                 })
@@ -321,8 +322,9 @@ const vm = createApp({
                 });
         },
         renderCalendar() {
-            var calendarEl = document.getElementById("calendar");
-            var calendar = new FullCalendar.Calendar(calendarEl, {
+            let clickCnt = 0
+            let calendarEl = document.getElementById("calendar");
+            let calendar = new FullCalendar.Calendar(calendarEl, {
                 height: this.windowResize(),
                 schedulerLicenseKey: "GPL-My-Project-Is-Open-Source",
                 timeZone: "UTC",
@@ -369,6 +371,22 @@ const vm = createApp({
                 displayEventTime: false,
                 events: this.filteredData,
                 eventColor: "#a52241",
+                eventClick: function (info) {
+                    clickCnt++
+                    if (clickCnt === 1) {
+                        setTimeout(function () {
+                            clickCnt = 0
+                        }, 400)
+                    } else if (clickCnt === 2) {
+                        clickCnt = 0
+                        const { title, extendedProps: props } = info.event
+                        vm.viewProject.name = title
+                        vm.viewProject.fields = props.fields
+                        vm.renderProjectCalendar();
+                        let modalId = document.getElementById('project_gantt')
+                        modalId.showModal()
+                    }
+                },
                 eventResize: async function (info) {
                     const { startStr, endStr, id, title } = info.event;
                     const startStrOld = info.oldEvent.startStr;
@@ -395,6 +413,9 @@ const vm = createApp({
                                 title: "ไม่สามารถ Update ได้เนื่องจากไม่มีข้อมูลของวันที่จบ(field_end)"
                             });
                         }
+                    } else {
+                        await vm.updateRecords();
+                        vm.showGantt(vm.tabActive)
                     }
                 },
                 eventDrop: function (info) {
@@ -417,6 +438,138 @@ const vm = createApp({
             spans.forEach(span => {
                 span.classList.add('hidden');
             });
+        },
+        renderProjectCalendar() {
+            let calendarEl = document.getElementById("project_calendar");
+            let calendar = new FullCalendar.Calendar(calendarEl, {
+                height: this.projectModalsize(),
+                schedulerLicenseKey: "GPL-My-Project-Is-Open-Source",
+                timeZone: "UTC",
+                initialView: "resourceTimelineMonth",
+                aspectRatio: 1.5,
+                headerToolbar: {
+                    left: "today prev,next",
+                    center: "title",
+                    right: ""
+                },
+                buttonText: {
+                    today: "วันนี้",
+                },
+                // editable: true,
+                resources: this.filteredProjectGroupResource,
+                resourceAreaHeaderContent: {
+                    html: `
+                    <button class="btn btn-sm btn-ghost" onclick="setting_project_gantt_modal.showModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                            <path fill-rule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
+                        </svg>                  
+                        ตั้งค่าการแสดงผล
+                    </button>
+                `},
+                resourceLabelContent: function (info) {
+                    const sliceDate = (start, end) => {
+                        if (!start || !end) return ''
+                        const thaiDate = (date) => {
+                            const arrDate = new Date(date).toLocaleDateString('th').split("/")
+                            return `${arrDate[0]}/${arrDate[1]}`
+                        }
+                        return ` 📅 ${thaiDate(start)} ถึง ${thaiDate(end)}`
+                    }
+
+                    const { start, end } = info.resource._resource.extendedProps
+                    return { html: `${info.resource.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small>` }
+                },
+                displayEventTime: false,
+                events: this.filteredProjectGroupEvents,
+                eventColor: "#a52241",
+                eventBorderColor: '#fff',
+                eventResize: async function (info) {
+                    const { startStr, endStr, id, title } = info.event;
+                    const startStrOld = info.oldEvent.startStr;
+                    const endStrOld = info.oldEvent.endStr;
+                    vm.event = {
+                        id: id,
+                        name: title,
+                        start: startStr,
+                        end: endStr,
+                    };
+
+                    if (!vm.tabActive.field_end) {
+                        if (startStrOld != startStr) {
+                            vm.toast.fire({
+                                icon: "warning",
+                                title: "ไม่มีข้อมูลของวันที่จบ(field_end) จึงทำให้แท่งกราฟอิงตามวันที่เริ่ม(field_start)"
+                            });
+                            await vm.updateRecords();
+                            vm.showGantt(vm.tabActive)
+                        } else if (endStrOld != endStr) {
+                            info.revert();
+                            return vm.toast.fire({
+                                icon: "error",
+                                title: "ไม่สามารถ Update ได้เนื่องจากไม่มีข้อมูลของวันที่จบ(field_end)"
+                            });
+                        }
+                    } else {
+                        await vm.updateRecords();
+                        vm.showGantt(vm.tabActive)
+                    }
+                },
+                eventDrop: function (info) {
+                    const { startStr, endStr, id, title } = info.event;
+                    vm.event = {
+                        id: id,
+                        name: title,
+                        start: startStr,
+                        end: endStr,
+                    };
+
+                    vm.updateRecords();
+                },
+            });
+
+            calendar.setOption("locale", "th");
+            calendar.render();
+
+            const spans = document.querySelectorAll('span.fc-datagrid-expander-placeholder');
+            spans.forEach(span => {
+                span.classList.add('hidden');
+            });
+        },
+        addSettingProjectGroup() {
+            this.projectGroups.push({
+                group_name: '',
+                field_start: '',
+                field_end: ''
+            })
+        },
+        saveSettingProjectGroup() {
+            const headers = {
+                Authorization: `Bearer ${this.user.airtable_token}`,
+                "Content-Type": "application/json",
+            };
+            try {
+                axios.patch(`https://api.airtable.com/v0/appjfqpEHmnEsozi9/tbl64GrdfhsMbqiJ0/${this.tabActive.record_id}`,
+                    {
+                        fields: { project_groups: JSON.stringify(this.projectGroups) },
+                    },
+                    { headers }
+                ).then(async (valUpdate) => {
+                    this.getGantt();
+                    this.closeModal('setting_project_gantt_modal')
+
+                    const { id, fields } = valUpdate.data
+                    this.tabActive = fields
+                    this.tabActive.record_id = id
+                    this.showGantt(this.tabActive)
+                    this.renderProjectCalendar()
+                })
+            } catch (err) {
+                this.toast.fire({
+                    icon: "error",
+                    title: "เกิดปัญหาบางอย่างขึ้นที่ saveSettingProjectGroup()"
+                });
+                console.error(err);
+            }
         },
         saveFilter() {
             if (this.filters.some(f => f.field_name == null || f.field_name == '')) {
@@ -487,9 +640,20 @@ const vm = createApp({
 
             return size;
         },
+        projectModalsize() {
+            const element = document.getElementById("project_calendar");
+            const windowHeight = window.innerHeight;
+            const size = windowHeight - 120 + "px";
+            element.style.height = size;
+
+            return size;
+        },
         addFilter() {
             if (this.filters.length == 0) return this.filters.push({ field_name: 'เลือกชื่อฟิลด์', operator: '=', value: '' })
             this.filters.push({ field_name: 'เลือกชื่อฟิลด์', operator: '=', value: '', more: 'OR' })
+        },
+        resetGroupEvent() {
+            this.showGantt(this.tabActive)
         }
     },
     computed: {
@@ -505,6 +669,14 @@ const vm = createApp({
                 this.filters = conditions
             } else {
                 this.filters = []
+            }
+
+            let projectGroups
+            if (this.tabActive?.project_groups && this.tabActive.project_groups !== "\n") {
+                projectGroups = JSON.parse(this.tabActive.project_groups.replace(/\\/g, ''))
+                this.projectGroups = projectGroups
+            } else {
+                this.projectGroups = []
             }
 
             function onConditions(more, field_name, operator, value) {
@@ -537,12 +709,38 @@ const vm = createApp({
 
             const filteredData = filterData(this.data, conditions);
             return filteredData
+        },
+        filteredProjectGroupResource() {
+            const filteredData = this.filteredData.filter(data => data.title == this.viewProject.name).map(d => {
+                return this.projectGroups.map(g => {
+                    return {
+                        id: d.id,
+                        title: d.title
+                    }
+                })
+            })
+            return filteredData[0]
+        },
+        filteredProjectGroupEvents() {
+            const filteredData = this.filteredData.filter(data => data.title == this.viewProject.name).map(d => {
+                return this.projectGroups.map(g => {
+                    return {
+                        resourceId: d.id,
+                        title: g.group_name,
+                        start: d.fields[g.field_start],
+                        end: d.fields[g.field_end],
+                        textColor: g.text_color,
+                        backgroundColor: g.bg_color
+                    }
+                })
+            })
+            return filteredData[0]
         }
     },
     async mounted() {
         await this.checkAuth();
         this.renderCalendar();
-        window.addEventListener("resize", () => this.windowResize());
+        window.addEventListener("resize", () => this.windowResize() && this.projectModalsize());
         window.addEventListener("focus", () => this.showGantt(this.tabActive));
     },
 }).mount('#app')

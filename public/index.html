@@ -531,7 +531,7 @@
                   </select>
                 </div>
                 <div class="join flex items-center">
-                  <div class="dropdown join-item">
+                  <div class="dropdown join-item" @click="searchField = ''">
                     <div
                       tabindex="0"
                       role="button"
@@ -658,6 +658,255 @@
         <form method="dialog" class="modal-backdrop">
           <button>close</button>
         </form>
+      </dialog>
+      <dialog id="project_gantt" class="modal">
+        <div class="modal-box w-[95%] max-w-[100%] h-[95%] max-h-[100%]">
+          <form method="dialog">
+            <button
+              class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+            >
+              ✕
+            </button>
+          </form>
+          <h3 class="font-bold text-2xl">
+            Gantt โปรเจกต์ {{ viewProject.name }}
+          </h3>
+          <div id="project_calendar" class="z-20"></div>
+        </div>
+      </dialog>
+      <dialog id="setting_project_gantt_modal" class="modal">
+        <div class="modal-box w-2/3 max-w-[100%]">
+          <form method="dialog" @click="resetGroupEvent()">
+            <button
+              class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+            >
+              ✕
+            </button>
+          </form>
+          <h3 class="font-bold text-lg">
+            ตั้งค่าการแสดงผลโปรเจกต์บน Gantt นี้
+          </h3>
+          <form @submit.prevent="" class="py-4 px-2 h-[32rem] overflow-y-auto">
+            <div
+              class="grid grid-cols-3 gap-x-5"
+              v-for="(pg, pgIndex) in projectGroups"
+              :key="'project-group-' + pgIndex"
+            >
+              <label class="form-control w-full">
+                <div class="label">
+                  <span class="label-text">
+                    <div
+                      :class="['px-2 rounded-lg', pg.text_color ? `text-[${pg.text_color}]` : '', pg.bg_color ? `bg-[${pg.bg_color}]` : 'bg-base-300']"
+                    >
+                      {{ pgIndex + 1 }} ชื่อการแสดงผล
+                    </div>
+                  </span>
+                </div>
+                <input
+                  v-model="pg.group_name"
+                  type="text"
+                  placeholder="กรอกชื่อการแสดงผล"
+                  class="input input-bordered w-full"
+                />
+              </label>
+              <label class="form-control w-full">
+                <div class="label">
+                  <span class="label-text">
+                    <div
+                      :class="['px-2 rounded-lg', pg.text_color ? `text-[${pg.text_color}]` : '', pg.bg_color ? `bg-[${pg.bg_color}]` : 'bg-base-300']"
+                    >
+                      {{ pgIndex + 1 }} ชื่อฟิลด์ของวันที่เริ่ม
+                    </div>
+                  </span>
+                </div>
+                <div class="dropdown input-bordered" @click="searchField = ''">
+                  <div
+                    tabindex="0"
+                    role="button"
+                    class="btn btn-ghost border-1 border-inherit rounded-lg w-full flex justify-start font-normal text-base"
+                  >
+                    <span> {{ pg.field_start ? pg.field_start : 'เลือกฟิลด์' }} </span>
+                  </div>
+                  <ul
+                    tabindex="0"
+                    class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-60 h-48 grid content-start"
+                  >
+                    <li>
+                      <a>
+                        <input
+                          type="text"
+                          placeholder="ค้นหา"
+                          v-model="searchField"
+                          class="input input-bordered h-7 w-full"
+                        />
+                      </a>
+                    </li>
+                    <div class="overflow-x-scroll">
+                      <li
+                        v-for="fs in filteredSearchField"
+                        :key="'settinng_project_group_li_radio_field_start_' + fs"
+                        @click="pg.field_start = fs"
+                      >
+                        <a>{{ fs }}</a>
+                      </li>
+                    </div>
+                  </ul>
+                </div>
+              </label>
+              <label class="form-control w-full">
+                <div class="label">
+                  <span class="label-text">
+                    <div
+                      :class="['px-2 rounded-lg', pg.text_color ? `text-[${pg.text_color}]` : '', pg.bg_color ? `bg-[${pg.bg_color}]` : 'bg-base-300']"
+                    >
+                      {{ pgIndex + 1 }} ชื่อฟิลด์ของวันที่จบ
+                    </div>
+                  </span>
+                </div>
+                <div class="dropdown input-bordered" @click="searchField = ''">
+                  <div
+                    tabindex="0"
+                    role="button"
+                    class="btn btn-ghost border-1 border-inherit rounded-lg w-full flex justify-start font-normal text-base"
+                  >
+                    <span> {{ pg.field_end ? pg.field_end : 'เลือกฟิลด์' }} </span>
+                  </div>
+                  <ul
+                    tabindex="0"
+                    class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-60 h-48 grid content-start"
+                  >
+                    <li>
+                      <a>
+                        <input
+                          type="text"
+                          placeholder="ค้นหา"
+                          v-model="searchField"
+                          class="input input-bordered h-7 w-full"
+                        />
+                      </a>
+                    </li>
+                    <div class="overflow-x-scroll">
+                      <li
+                        v-for="fs in filteredSearchField"
+                        :key="'settinng_project_group_li_radio_field_end_' + fs"
+                        @click="pg.field_end = fs"
+                      >
+                        <a>{{ fs }}</a>
+                      </li>
+                    </div>
+                  </ul>
+                </div>
+              </label>
+              <div class="col-span-3 divider">
+                <div class="dropdown">
+                  <div tabindex="0" role="button" class="btn btn-sm btn-ghost">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      class="w-5 h-5"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M20.599 1.5c-.376 0-.743.111-1.055.32l-5.08 3.385a18.747 18.747 0 0 0-3.471 2.987 10.04 10.04 0 0 1 4.815 4.815 18.748 18.748 0 0 0 2.987-3.472l3.386-5.079A1.902 1.902 0 0 0 20.599 1.5Zm-8.3 14.025a18.76 18.76 0 0 0 1.896-1.207 8.026 8.026 0 0 0-4.513-4.513A18.75 18.75 0 0 0 8.475 11.7l-.278.5a5.26 5.26 0 0 1 3.601 3.602l.502-.278ZM6.75 13.5A3.75 3.75 0 0 0 3 17.25a1.5 1.5 0 0 1-1.601 1.497.75.75 0 0 0-.7 1.123 5.25 5.25 0 0 0 9.8-2.62 3.75 3.75 0 0 0-3.75-3.75Z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div
+                    tabindex="0"
+                    class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 space-y-3"
+                  >
+                    <label
+                      class="input input-bordered flex items-center gap-2 w-full"
+                    >
+                      สีตัวอักษร
+                      <input
+                        type="color"
+                        class="grow"
+                        v-model="pg.text_color"
+                      />
+                    </label>
+                    <label
+                      class="input input-bordered flex items-center gap-2 w-full"
+                    >
+                      สีพื้นหลัง
+                      <input type="color" class="grow" v-model="pg.bg_color" />
+                    </label>
+                  </div>
+                </div>
+
+                <div
+                  class="flex hover:text-[#a52241] hover:cursor-pointer"
+                  @click="projectGroups.splice(pgIndex, 1)"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                    />
+                  </svg>
+                  <span> ลบกลุ่ม {{ pgIndex + 1 }} </span>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 justify-items-stretch">
+              <button
+                :class="['btn w-max px-20', projectGroups.length > 0 ? 'justify-self-end me-10' : 'justify-self-center col-span-2']"
+                @click="addSettingProjectGroup()"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+                เพิ่มกลุ่ม
+              </button>
+              <div
+                v-if="projectGroups.length > 0"
+                class="btn w-max px-20 justify-self-start ms-10 bg-[#a52241] text-white hover:text-[#a52241] hover:bg-white hover:border-[#a52241]"
+                @click="saveSettingProjectGroup()"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"
+                  />
+                </svg>
+                <input
+                  class="cursor-pointer"
+                  type="submit"
+                  value="บันทึกลง Airtable"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
       </dialog>
     </div>
 
