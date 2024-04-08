@@ -305,8 +305,8 @@ const vm = createApp({
                                 title: projectName,
                                 groupBy: groupBy || d.fields[g.field_group],
                                 resourceId: d.id,
-                                start: blockStart,
-                                end: blockEnd,
+                                start: blockStart ? `${blockStart} 08:00:00` : '',
+                                end: blockEnd ? `${blockEnd} 17:00:00` : '',
                                 fields: d.fields
                             };
                         });
@@ -382,9 +382,9 @@ const vm = createApp({
                         const { title, extendedProps: props } = info.event
                         vm.viewProject.name = title
                         vm.viewProject.fields = props.fields
-                        vm.renderProjectCalendar();
-                        let modalId = document.getElementById('project_gantt')
+                        const modalId = document.getElementById('project_gantt')
                         modalId.showModal()
+                        vm.renderProjectCalendar();
                     }
                 },
                 eventResize: async function (info) {
@@ -448,11 +448,13 @@ const vm = createApp({
                 headerToolbar: {
                     left: "today prev,next",
                     center: "title",
-                    right: ""
+                    right: "",
                 },
                 buttonText: {
-                    today: "วันนี้",
+                    today: "วันนี้"
                 },
+                slotMinTime: "08:00:00",
+                slotMaxTime: "18:00:00",
                 // editable: true,
                 resources: this.filteredProjectGroupResource,
                 resourceAreaHeaderContent: {
@@ -527,6 +529,10 @@ const vm = createApp({
 
             calendar.setOption("locale", "th");
             calendar.render();
+            calendar.prev();
+            setTimeout(() => {
+                calendar.next();
+            }, 200);
 
             const spans = document.querySelectorAll('span.fc-datagrid-expander-placeholder');
             spans.forEach(span => {
@@ -727,8 +733,8 @@ const vm = createApp({
                     return {
                         resourceId: d.id,
                         title: g.group_name,
-                        start: d.fields[g.field_start],
-                        end: d.fields[g.field_end],
+                        start: d.fields[g.field_start] ? `${d.fields[g.field_start]} 09:00:00` : '',
+                        end: d.fields[g.field_end] ? `${d.fields[g.field_end]} 17:00:00` : '',
                         textColor: g.text_color,
                         backgroundColor: g.bg_color
                     }
