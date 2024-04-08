@@ -405,7 +405,6 @@ const vm = createApp({
                                 title: "ไม่มีข้อมูลของวันที่จบ(field_end) จึงทำให้แท่งกราฟอิงตามวันที่เริ่ม(field_start)"
                             });
                             await vm.updateRecords();
-                            vm.showGantt(vm.tabActive)
                         } else if (endStrOld != endStr) {
                             info.revert();
                             return vm.toast.fire({
@@ -415,7 +414,6 @@ const vm = createApp({
                         }
                     } else {
                         await vm.updateRecords();
-                        vm.showGantt(vm.tabActive)
                     }
                 },
                 eventDrop: function (info) {
@@ -623,7 +621,9 @@ const vm = createApp({
                         },
                     },
                     { headers }
-                )
+                ).then(() => {
+                    this.showGantt(this.tabActive)
+                })
             } catch (err) {
                 this.toast.fire({
                     icon: "error",
