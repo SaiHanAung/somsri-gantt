@@ -611,24 +611,32 @@ const vm = createApp({
             }
         },
         updateRecords() {
+            const start = this.event.start ? this.event.start.slice(0, 10) : ''
+            const end = this.event.end ? this.event.end.slice(0, 10) : ''
             const headers = {
                 Authorization: `Bearer ${this.user.airtable_token}`,
                 "Content-Type": "application/json",
             };
-            const onlyStartUpdate = !this.tabActive.field_end ? { [this.tabActive.field_start]: this.event.start } : null
+            const onlyStartUpdate = !this.tabActive.field_end ? { [this.tabActive.field_start]: start } : null
 
             try {
                 axios.patch(
                     `https://api.airtable.com/v0/${this.tabActive.base_id}/${this.tabActive.table_id}/${this.event.id}`,
                     {
                         fields: onlyStartUpdate ? onlyStartUpdate : {
-                            [this.tabActive.field_start]: this.event.start,
-                            [this.tabActive.field_end]: this.event.end,
+                            [this.tabActive.field_start]: start,
+                            [this.tabActive.field_end]: end,
                         },
                     },
                     { headers }
                 ).then(() => {
                     this.showGantt(this.tabActive)
+                }).catch(err => {
+                    this.toast.fire({
+                        icon: "error",
+                        title: "เกิดปัญหาบางอย่างขึ้นที่ updateRecords()"
+                    });
+                    console.error(err);
                 })
             } catch (err) {
                 this.toast.fire({
