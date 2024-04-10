@@ -253,6 +253,7 @@ const vm = createApp({
                                     ) < 0 && tb.table_id == d.fields.table_id
                                 ) {
                                     const mergeObj = Object.assign({}, { record_id: d.id }, d.fields)
+                                    if (this.tabActive?.record_id == d.id) this.tabActive = mergeObj
                                     tb.views.push(mergeObj);
                                 }
                             });
@@ -762,6 +763,11 @@ const vm = createApp({
         await this.checkAuth();
         this.renderCalendar();
         window.addEventListener("resize", () => this.windowResize() && this.projectModalsize());
-        window.addEventListener("focus", () => this.showGantt(this.tabActive));
+        window.addEventListener("focus", async () => {
+            await this.getGantt();
+            setTimeout(() => {
+                this.showGantt(this.tabActive)
+            }, 1000);
+        });
     },
 }).mount('#app')
