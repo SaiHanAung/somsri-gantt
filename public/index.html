@@ -225,7 +225,7 @@
                           </summary>
                           <ul>
                             <li
-                              v-for="(v, vi) in tb.views"
+                              v-for="(v, vi) in tb.views.sort((a,b) => a.button_sort - b.button_sort)"
                               :key="'view_' + vi + v.button_name"
                               @click="showGantt(v);"
                               :class="{'bg-[#e5e5e5] rounded-lg': tabActive?.button_name == v.button_name}"
@@ -725,7 +725,9 @@
                     role="button"
                     class="btn btn-ghost border-1 border-inherit rounded-lg w-full flex justify-start font-normal text-base"
                   >
-                    <span> {{ pg.field_start ? pg.field_start : 'เลือกฟิลด์' }} </span>
+                    <span>
+                      {{ pg.field_start ? pg.field_start : 'เลือกฟิลด์' }}
+                    </span>
                   </div>
                   <ul
                     tabindex="0"
@@ -769,7 +771,9 @@
                     role="button"
                     class="btn btn-ghost border-1 border-inherit rounded-lg w-full flex justify-start font-normal text-base"
                   >
-                    <span> {{ pg.field_end ? pg.field_end : 'เลือกฟิลด์' }} </span>
+                    <span>
+                      {{ pg.field_end ? pg.field_end : 'เลือกฟิลด์' }}
+                    </span>
                   </div>
                   <ul
                     tabindex="0"

@@ -288,8 +288,8 @@ const vm = createApp({
                                 let groupArr = groupSort.split(',');
                                 Object.entries(groupArr).map((group, index) => {
                                     if (d.fields[g.field_group] == group[1]) {
-                                        // groupBy = `${index + 1}. ${group[1]}`
-                                        groupBy = `${group[1]}`
+                                        groupBy = `${index + 1}. ${group[1]}`
+                                        // groupBy = `${group[1]}`
                                     }
                                 })
                             }
@@ -694,17 +694,17 @@ const vm = createApp({
             }
 
             function onConditions(more, field_name, operator, value) {
-                if (more === "OR") {
-                    return field_name == value;
-                } else {
+                if (!more || more === "AND") {
                     switch (operator) {
                         case '=':
                             return field_name == value;
                         case '!=':
                             return field_name != value;
                         default:
-                            return true;
+                            return false;
                     }
+                } else if (more === "OR") {
+                    return field_name == value;
                 }
             }
 
@@ -717,6 +717,13 @@ const vm = createApp({
                     const meetsAllConditions = conditions.every(condition => onConditions(condition.more, d.fields[condition.field_name], condition.operator, condition.value))
                     const any = conditions.some(condition => condition.more === "OR")
                     const all = conditions.some(condition => condition.more === "AND")
+                    if (conditions.length == 1) {
+                        if (conditions[0].operator == '=') {
+                            return d.fields[conditions[0].field_name] === conditions[0].value
+                        } else {
+                            return d && d.fields[conditions[0].field_name] !== conditions[0].value
+                        }
+                    };
                     return (any && meetsAnyCondition) || (all && meetsAllConditions);
                 })
             }
