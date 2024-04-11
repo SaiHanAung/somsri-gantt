@@ -138,8 +138,12 @@ const vm = createApp({
         register(modalId) {
             createUserWithEmailAndPassword(auth, this.user.email, this.user.password)
                 .then((userCredential) => {
-
                     const user = userCredential.user;
+                    this.gantts = []
+                    this.toast.fire({
+                        icon: "warning",
+                        title: "หลังจากสมัครบัญชีแล้วให้ไปกรอก Token ก่อนจึงจะดู Ganttได้"
+                    });
 
                     set(ref(database, 'gantts/users/' + user.uid), {
                         email: user.email,
@@ -151,6 +155,7 @@ const vm = createApp({
                             title: "เกิดปัญหาบางอย่างที่ register() > set()"
                         });
                     });
+
                     this.closeModal(modalId);
                 })
                 .catch((err) => {
