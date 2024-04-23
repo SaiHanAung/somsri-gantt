@@ -15,15 +15,8 @@
       href="https://somsritshirt.com/wp-content/uploads/2023/02/cropped-favicon-196w-150x150.jpg"
       sizes="32x32"
     />
-    <link
-      href="IBM+Plex+Sans+Thai.css2.css"
-      rel="stylesheet"
-    />
-    <link
-      href="daisyui@4.9.0.full.min.css"
-      rel="stylesheet"
-      type="text/css"
-    />
+    <link href="IBM+Plex+Sans+Thai.css2.css" rel="stylesheet" />
+    <link href="daisyui@4.9.0.full.min.css" rel="stylesheet" type="text/css" />
 
     <script src="vue-select.umd.js"></script>
     <link rel="stylesheet" href="vue-select.css" />
@@ -525,6 +518,7 @@
             <template v-for="(f, fi) in filters" :key="'filter_' + fi">
               <div class="pt-4 flex items-center gap-2">
                 <div v-if="fi > 0">
+                  <!-- <span>และ</span> -->
                   <select class="select w-full max-w-xs" v-model="f.more">
                     <option selected value="AND">และ</option>
                     <option value="OR">หรือ</option>

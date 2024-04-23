@@ -670,7 +670,7 @@ const vm = createApp({
         },
         addFilter() {
             if (this.filters.length == 0) return this.filters.push({ field_name: 'เลือกชื่อฟิลด์', operator: '=', value: '' })
-            this.filters.push({ field_name: 'เลือกชื่อฟิลด์', operator: '=', value: '', more: 'OR' })
+            this.filters.push({ field_name: 'เลือกชื่อฟิลด์', operator: '=', value: '', more: 'AND' })
         },
         resetGroupEvent() {
             this.showGantt(this.tabActive)
@@ -699,19 +699,24 @@ const vm = createApp({
                 this.projectGroups = []
             }
 
-            function onConditions(more, field_name, operator, value) {
-                if (!more || more === "AND") {
-                    switch (operator) {
-                        case '=':
-                            return field_name == value;
-                        case '!=':
-                            return field_name != value;
-                        default:
-                            return false;
-                    }
-                } else if (more === "OR") {
-                    return field_name == value;
-                }
+            // function onConditions(more, field_name, operator, value) {
+            //     if (more === "AND") {
+            //         // switch (operator) {
+            //         //     case '=':
+            //         //         return field_name == value;
+            //         //     case '!=':
+            //         //         return field_name != value;
+            //         //     default:
+            //         //         return false;
+            //         // }
+            //     } else if (more === "OR") {
+            //         if (operator == '=') return field_name == value;
+            //         else return field_name != value;
+            //     }
+            // }
+            function onConditions(field_name, operator, value) {
+                if (operator == '=') return field_name == value;
+                else return field_name != value;
             }
 
             function filterData(datas, conditions) {
@@ -719,10 +724,12 @@ const vm = createApp({
 
                 return datas.filter(d => {
                     if (!conditions) return d;
-                    const meetsAnyCondition = conditions.some(condition => onConditions(condition.more, d.fields[condition.field_name], condition.operator, condition.value))
-                    const meetsAllConditions = conditions.every(condition => onConditions(condition.more, d.fields[condition.field_name], condition.operator, condition.value))
-                    const any = conditions.some(condition => condition.more === "OR")
-                    const all = conditions.some(condition => condition.more === "AND")
+                    // const meetsAnyCondition = conditions.some(condition => onConditions(condition.more, d.fields[condition.field_name], condition.operator, condition.value))
+                    // const meetsAllConditions = conditions.every(condition => onConditions(condition.more, d.fields[condition.field_name], condition.operator, condition.value))
+                    const meetsAnyCondition = conditions.some(condition => onConditions(d.fields[condition.field_name], condition.operator, condition.value))
+                    const meetsAllConditions = conditions.every(condition => onConditions(d.fields[condition.field_name], condition.operator, condition.value))
+                    const any = conditions.some(condition => condition.more == "OR")
+                    const all = conditions.some(condition => condition.more == "AND")
                     if (conditions.length == 1) {
                         if (conditions[0].operator == '=') {
                             return d.fields[conditions[0].field_name] === conditions[0].value
@@ -730,6 +737,7 @@ const vm = createApp({
                             return d && d.fields[conditions[0].field_name] !== conditions[0].value
                         }
                     };
+                    
                     return (any && meetsAnyCondition) || (all && meetsAllConditions);
                 })
             }
