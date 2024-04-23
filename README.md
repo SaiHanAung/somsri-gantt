@@ -1,2 +1,2 @@
-run command
+## Run command
 $ firebase deploy --only hosting
