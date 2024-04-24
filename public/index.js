@@ -284,38 +284,50 @@ const vm = createApp({
             })
                 .then((el) => {
                     let groupBy
-                    this.data = el.data.records.filter(record => record.fields[g.field_group])
-                        .map((d) => {
-                            const projectName = d.fields[g.field_name];
-                            const blockStart = d.fields[g.field_start];
-                            const blockEnd = d.fields[g.field_end];
-                            let groupSort = g.group_sort;
-                            if (groupSort) {
-                                let groupArr = groupSort.split(',');
-                                Object.entries(groupArr).map((group, index) => {
-                                    if (d.fields[g.field_group] == group[1]) {
-                                        groupBy = `${index + 1}. ${group[1]}`
-                                        // groupBy = `${group[1]}`
+                    if (g.field_group) {
+                        this.data = el.data.records.filter(record => record.fields[g.field_group])
+                            .map((d) => {
+                                const projectName = d.fields[g.field_name];
+                                const blockStart = d.fields[g.field_start];
+                                const blockEnd = d.fields[g.field_end];
+                                let groupSort = g.group_sort;
+                                if (groupSort) {
+                                    let groupArr = groupSort.split(',');
+                                    Object.entries(groupArr).map((group, index) => {
+                                        if (d.fields[g.field_group] == group[1]) {
+                                            groupBy = `${index + 1}. ${group[1]}`
+                                            // groupBy = `${group[1]}`
+                                        }
+                                    })
+                                }
+
+                                Object.keys(d.fields).map(field => {
+                                    if (this.fieldOptions.findIndex(val => val == field) == -1) {
+                                        this.fieldOptions.push(field)
                                     }
                                 })
-                            }
 
-                            Object.keys(d.fields).map(field => {
-                                if (this.fieldOptions.findIndex(val => val == field) == -1) {
-                                    this.fieldOptions.push(field)
+                                return {
+                                    id: d.id,
+                                    title: projectName,
+                                    groupBy: groupBy || d.fields[g.field_group],
+                                    resourceId: d.id,
+                                    start: blockStart ? `${blockStart} 08:00:00` : '',
+                                    end: blockEnd ? `${blockEnd} 17:00:00` : '',
+                                    fields: d.fields
+                                };
+                            });
+                    } else {
+                        this.data = el.data.records.filter(record => record.fields[g.field_name])
+                            .map(data => {
+                                return {
+                                    id: data.id,
+                                    title: data.fields[g.field_name],
+                                    resourceId: data.id,
+                                    fields: data.fields
                                 }
                             })
-
-                            return {
-                                id: d.id,
-                                title: projectName,
-                                groupBy: groupBy || d.fields[g.field_group],
-                                resourceId: d.id,
-                                start: blockStart ? `${blockStart} 08:00:00` : '',
-                                end: blockEnd ? `${blockEnd} 17:00:00` : '',
-                                fields: d.fields
-                            };
-                        });
+                    }
                     this.isLoaded();
                     this.renderCalendar();
                 })
@@ -350,8 +362,8 @@ const vm = createApp({
                 },
                 slotMinTime: "08:00:00",
                 slotMaxTime: "18:00:00",
-                editable: true,
-                resources: this.filteredData,
+                editable: this.tabActive?.button_name.includes('ALL TEAM') ? false : true,
+                resources: this.tabActive?.button_name.includes('ALL TEAM') ? this.filteredAllTeamResorce : this.filteredData,
                 resourceAreaHeaderContent: {
                     html: `<div class="flex items-center gap-1">
                             ${vm.tabActive?.button_name ? `<small class="px-1 btn btn-sm btn-ghost ${vm.filters.length > 0 ? 'bg-[#a52241] hover:bg-rose-900 text-white' : ''}" onclick="filter_modal.showModal()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" /></svg></small>` : ''}
@@ -370,13 +382,14 @@ const vm = createApp({
                     }
 
                     const { start, end } = info.resource._resource.extendedProps
-                    return { html: `${info.resource.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small>` }
+                    return { html: `${info.resource?.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small>` }
                 },
                 resourceOrder: "groupBy,start",
                 resourceGroupField: 'groupBy',
                 displayEventTime: false,
-                events: this.filteredData,
+                events: this.tabActive?.button_name.includes('ALL TEAM') ? this.filteredAllTeamEvents : this.filteredData,
                 eventColor: "#a52241",
+                eventBorderColor: '#fff',
                 eventClick: function (info) {
                     clickCnt++
                     if (clickCnt === 1) {
@@ -737,7 +750,7 @@ const vm = createApp({
                             return d && d.fields[conditions[0].field_name] !== conditions[0].value
                         }
                     };
-                    
+
                     return (any && meetsAnyCondition) || (all && meetsAllConditions);
                 })
             }
@@ -770,7 +783,34 @@ const vm = createApp({
                 })
             })
             return filteredData[0]
-        }
+        },
+        filteredAllTeamResorce() {
+            const filteredData = this.filteredData.map(data => {
+                return {
+                    id: data.id,
+                    title: data.title
+                }
+            })
+            return filteredData
+        },
+        filteredAllTeamEvents() {
+            const filteredData = this.filteredData.map(d => {
+                return this.projectGroups.map(g => {
+                    return {
+                        resourceId: d.id,
+                        title: g.group_name,
+                        start: d.fields[g.field_start] ? `${d.fields[g.field_start]} 09:00:00` : '',
+                        end: d.fields[g.field_end] ? `${d.fields[g.field_end]} 17:00:00` : '',
+                        textColor: g.text_color,
+                        backgroundColor: g.bg_color
+                    }
+                })
+            })
+
+            return filteredData.reduce((acc, curr) => {
+                return acc.concat(curr);
+            }, [])
+        },
     },
     async mounted() {
         await this.checkAuth();
