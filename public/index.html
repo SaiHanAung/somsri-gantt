@@ -551,13 +551,14 @@
                         <li
                           v-for="fs in filteredSearchField"
                           :key="'li_radio_' + fs"
-                          @click="f.field_name = fs"
+                          @click="f.field_name = fs; initOptionValue(filters)"
                         >
                           <a>{{ fs }}</a>
                         </li>
                       </div>
                     </ul>
                   </div>
+
                   <select
                     v-model="f.operator"
                     class="select select-bordered join-item"
@@ -566,14 +567,45 @@
                     <option value="=">เท่ากับ</option>
                     <option value="!=">ไม่เท่ากับ</option>
                   </select>
-                  <div>
-                    <div>
-                      <input
-                        v-model="f.value"
-                        class="input input-bordered join-item"
-                        placeholder="ค่า"
-                      />
+
+                  <input
+                    v-if="!f.options?.length > 0"
+                    v-model="f.value"
+                    class="input input-bordered join-item"
+                    placeholder="ค่า"
+                  />
+                  <div
+                    v-else
+                    class="dropdown input input-bordered join-item hover:btn-ghost"
+                    @click="searchFieldValue.label = f.field_name"
+                  >
+                    <div tabindex="0" role="button" class="btn btn-ghost">
+                      {{ f.value }}
                     </div>
+                    <ul
+                      tabindex="0"
+                      class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 h-44 grid content-start"
+                    >
+                      <li>
+                        <a>
+                          <input
+                            type="text"
+                            placeholder="ค้นหา"
+                            v-model="searchFieldValue.value"
+                            class="input input-bordered input-xs w-full max-w-xs"
+                          />
+                        </a>
+                      </li>
+                      <div class="overflow-x-scroll">
+                        <li
+                          v-for="fs in filteredSearchFieldValue"
+                          :key="'li_radio_val' + fs.id"
+                          @click="f.value = fs.name"
+                        >
+                          <a>{{ fs.name }}</a>
+                        </li>
+                      </div>
+                    </ul>
                   </div>
                 </div>
                 <svg

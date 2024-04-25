@@ -37,6 +37,10 @@ const vm = createApp({
             projectGroups: [],
             viewProject: {},
             searchField: '',
+            searchFieldValue: {
+                label: '',
+                value: ''
+            },
             fieldSelected: null,
             fieldOptions: [],
             data: null,
@@ -279,65 +283,78 @@ const vm = createApp({
             if (!g) return
             this.tabActive = g;
             this.isLoading();
+
+            // Get table data
             axios(`https://api.airtable.com/v0/${g.base_id}/${g.table_id}`, {
                 headers: `Authorization: Bearer ${this.user.airtable_token}`,
-            })
-                .then((el) => {
-                    let groupBy
-                    if (g.field_group) {
-                        this.data = el.data.records.filter(record => record.fields[g.field_group])
-                            .map((d) => {
-                                const projectName = d.fields[g.field_name];
-                                const blockStart = d.fields[g.field_start];
-                                const blockEnd = d.fields[g.field_end];
-                                let groupSort = g.group_sort;
-                                if (groupSort) {
-                                    let groupArr = groupSort.split(',');
-                                    Object.entries(groupArr).map((group, index) => {
-                                        if (d.fields[g.field_group] == group[1]) {
-                                            groupBy = `${index + 1}. ${group[1]}`
-                                            // groupBy = `${group[1]}`
-                                        }
-                                    })
-                                }
-
-                                Object.keys(d.fields).map(field => {
-                                    if (this.fieldOptions.findIndex(val => val == field) == -1) {
-                                        this.fieldOptions.push(field)
-                                    }
-                                })
-
-                                return {
-                                    id: d.id,
-                                    title: projectName,
-                                    groupBy: groupBy || d.fields[g.field_group],
-                                    resourceId: d.id,
-                                    start: blockStart ? `${blockStart} 08:00:00` : '',
-                                    end: blockEnd ? `${blockEnd} 17:00:00` : '',
-                                    fields: d.fields
-                                };
-                            });
-                    } else {
-                        this.data = el.data.records.filter(record => record.fields[g.field_name])
-                            .map(data => {
-                                return {
-                                    id: data.id,
-                                    title: data.fields[g.field_name],
-                                    resourceId: data.id,
-                                    fields: data.fields
+            }).then((el) => {
+                let groupBy
+                // if (g.field_group) {
+                this.data = el.data.records.filter(record => record.fields[g.field_group || g.field_name])
+                    .map((d) => {
+                        const projectName = d.fields[g.field_name];
+                        const blockStart = d.fields[g.field_start];
+                        const blockEnd = d.fields[g.field_end];
+                        let groupSort = g.group_sort;
+                        if (groupSort) {
+                            let groupArr = groupSort.split(',');
+                            Object.entries(groupArr).map((group, index) => {
+                                if (d.fields[g.field_group] == group[1]) {
+                                    groupBy = `${index + 1}. ${group[1]}`
+                                    // groupBy = `${group[1]}`
                                 }
                             })
-                    }
-                    this.isLoaded();
-                    this.renderCalendar();
-                })
-                .catch((err) => {
-                    this.toast.fire({
-                        icon: "error",
-                        title: "เกิดปัญหาบางอย่างขึ้นที่ showGantt()"
+                        }
+
+                        Object.keys(d.fields).map(field => {
+                            if (this.fieldOptions.findIndex(val => val == field) == -1) {
+                                this.fieldOptions.push(field)
+                            }
+                        })
+
+                        return {
+                            id: d.id,
+                            title: projectName,
+                            groupBy: groupBy || d.fields[g.field_group] || null,
+                            resourceId: d.id,
+                            start: blockStart ? `${blockStart} 08:00:00` : '',
+                            end: blockEnd ? `${blockEnd} 17:00:00` : '',
+                            fields: d.fields
+                        };
                     });
-                    console.error(err);
+                // } else {
+                //     this.data = el.data.records.filter(record => record.fields[g.field_name])
+                //         .map(data => {
+                //             return {
+                //                 id: data.id,
+                //                 title: data.fields[g.field_name],
+                //                 resourceId: data.id,
+                //                 fields: data.fields
+                //             }
+                //         })
+                // }
+                this.isLoaded();
+                this.renderCalendar();
+            }).catch((err) => {
+                this.toast.fire({
+                    icon: "error",
+                    title: "เกิดข้อผิดพลาดระหว่างดึงข้อมูล at showGantt()"
                 });
+                console.error(err);
+            });
+
+            // Get detail for field type
+            axios(`https://api.airtable.com/v0/meta/bases/${g.base_id}/tables`, {
+                headers: `Authorization: Bearer ${this.user.airtable_token}`,
+            }).then((el) => {
+                this.tabActive.fieldType = el.data.tables.filter((table) => table.id === g.table_id).map(tb => tb.fields)[0]
+            }).catch((err) => {
+                this.toast.fire({
+                    icon: "error",
+                    title: "เกิดข้อผิดพลาดระหว่างดึงข้อมูล Meta data at showGantt()"
+                });
+                console.error(err);
+            });
         },
         renderCalendar() {
             let clickCnt = 0
@@ -602,6 +619,12 @@ const vm = createApp({
                 });
             }
 
+            this.filters.forEach(f => {
+                if (f.options) {
+                    delete f.options
+                }
+            })
+
             const headers = {
                 Authorization: `Bearer ${this.user.airtable_token}`,
                 "Content-Type": "application/json",
@@ -687,9 +710,34 @@ const vm = createApp({
         },
         resetGroupEvent() {
             this.showGantt(this.tabActive)
+        },
+        initOptionValue(filters) {
+            filters.forEach((field) => {
+                const findSingleSelect = this.tabActive.fieldType?.filter(ft => {
+                    const isSingleSelect = ft.name.includes(field.field_name) && ft.type.includes('singleSelect')
+                    if (isSingleSelect) {
+                        return ft
+                    }
+                }).map(el => el.options?.choices)
+
+                field.options = findSingleSelect ? findSingleSelect[0] : null
+            })
+        }
+    },
+    watch: {
+        filters(newVal) {
+            if (newVal) {
+                this.initOptionValue(newVal)
+            }
         }
     },
     computed: {
+        filteredSearchFieldValue() {
+            const { label, value } = this.searchFieldValue
+            const filterValue = this.filters.filter(f => f.field_name.includes(label))
+            const result = filterValue[0]?.options?.filter(option => option.name.includes(value))
+            return result
+        },
         filteredSearchField() {
             return this.fieldOptions.filter(f => {
                 return f.includes(this.searchField)
