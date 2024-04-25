@@ -289,7 +289,6 @@ const vm = createApp({
                 headers: `Authorization: Bearer ${this.user.airtable_token}`,
             }).then((el) => {
                 let groupBy
-                // if (g.field_group) {
                 this.data = el.data.records.filter(record => record.fields[g.field_group || g.field_name])
                     .map((d) => {
                         const projectName = d.fields[g.field_name];
@@ -322,17 +321,6 @@ const vm = createApp({
                             fields: d.fields
                         };
                     });
-                // } else {
-                //     this.data = el.data.records.filter(record => record.fields[g.field_name])
-                //         .map(data => {
-                //             return {
-                //                 id: data.id,
-                //                 title: data.fields[g.field_name],
-                //                 resourceId: data.id,
-                //                 fields: data.fields
-                //             }
-                //         })
-                // }
                 this.isLoaded();
                 this.renderCalendar();
             }).catch((err) => {
@@ -463,6 +451,18 @@ const vm = createApp({
 
                     vm.updateRecords();
                 },
+                slotLabelContent: function (info) {
+                    const data = vm.filteredData?.filter(f => new Date(f.start).getDate() === new Date(info.date).getDate())
+                    const sumAmount = data?.reduce((acc, curr) => acc + (curr.fields[vm.tabActive.field_count] || 0), 0)
+
+                    return {
+                        html: `
+                        <div class="gird text-center">
+                            <p>${info.text}</p>
+                            ${sumAmount ? `<small class="font-normal tooltip cursor-pointer" data-tip="ยอดสั่งงาน">ยอด ${sumAmount || 0}</small>` : '&nbsp;'}
+                        </div>
+                    ` }
+                }
             });
 
             calendar.setOption("locale", "th");
@@ -519,48 +519,6 @@ const vm = createApp({
                 events: this.filteredProjectGroupEvents,
                 eventColor: "#a52241",
                 eventBorderColor: '#fff',
-                eventResize: async function (info) {
-                    const { startStr, endStr, id, title } = info.event;
-                    const startStrOld = info.oldEvent.startStr;
-                    const endStrOld = info.oldEvent.endStr;
-                    vm.event = {
-                        id: id,
-                        name: title,
-                        start: startStr,
-                        end: endStr,
-                    };
-
-                    if (!vm.tabActive.field_end) {
-                        if (startStrOld != startStr) {
-                            vm.toast.fire({
-                                icon: "warning",
-                                title: "ไม่มีข้อมูลของวันที่จบ(field_end) จึงทำให้แท่งกราฟอิงตามวันที่เริ่ม(field_start)"
-                            });
-                            await vm.updateRecords();
-                            vm.showGantt(vm.tabActive)
-                        } else if (endStrOld != endStr) {
-                            info.revert();
-                            return vm.toast.fire({
-                                icon: "error",
-                                title: "ไม่สามารถ Update ได้เนื่องจากไม่มีข้อมูลของวันที่จบ(field_end)"
-                            });
-                        }
-                    } else {
-                        await vm.updateRecords();
-                        vm.showGantt(vm.tabActive)
-                    }
-                },
-                eventDrop: function (info) {
-                    const { startStr, endStr, id, title } = info.event;
-                    vm.event = {
-                        id: id,
-                        name: title,
-                        start: startStr,
-                        end: endStr,
-                    };
-
-                    vm.updateRecords();
-                },
             });
 
             calendar.setOption("locale", "th");
