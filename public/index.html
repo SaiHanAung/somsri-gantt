@@ -195,7 +195,7 @@
                       {{ g.base_name }}
                     </summary>
                     <ul>
-                      <li v-for="tb in g.tables" :key="'table_'+tb.table_id">
+                      <li v-for="tb in g.tables.sort((a,b) => a.table_sort - b.table_sort)" :key="'table_'+tb.table_id">
                         <details open>
                           <summary>
                             <div class="tooltip" data-tip="ชื่อ Table">

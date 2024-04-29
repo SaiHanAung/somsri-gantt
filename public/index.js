@@ -251,6 +251,7 @@ const vm = createApp({
                                 gg.tables.push({
                                     table_id: d.fields.table_id,
                                     table_name: d.fields.table_name,
+                                    table_sort: d.fields.table_sort,
                                     views: [],
                                 });
                             }
