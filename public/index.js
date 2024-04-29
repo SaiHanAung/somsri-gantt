@@ -305,7 +305,7 @@ const vm = createApp({
                 const getAllResponse = await Promise.all([fetchAll()])
 
                 let groupBy
-                this.data = getAllResponse[0].filter(record => record.fields[g.field_start])
+                this.data = getAllResponse[0].filter(record => record.fields[g.field_start || g.field_name])
                     .map((d) => {
                         const projectName = d.fields[g.field_name];
                         const blockStart = d.fields[g.field_start];
@@ -402,13 +402,16 @@ const vm = createApp({
                         }
                         return ` 📅 ${thaiDate(start)} ถึง ${thaiDate(end)}`
                     }
-
                     const { start, end, fields } = info.resource._resource.extendedProps
-                    return {
-                        html: `
-                    ${!vm.tabActive.table_name.includes('MASTER') && `<small>#${fields[vm.tabActive.field_prefix]}</small><br>`} 
-                    <p class="indent-4">${info.resource?.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small></p>`
+                    const initHtml = () => {
+                        if (vm.tabActive.table_name.includes('MASTER')) {
+                            return `${info.resource?.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small>`
+                        } else {
+                            return `<small>#${fields[vm.tabActive.field_prefix]}</small><br><p class="indent-4">${info.resource?.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small></p>`
+                        }
                     }
+
+                    return { html: initHtml() }
                 },
                 resourceOrder: "groupBy,start",
                 resourceGroupField: 'groupBy',
