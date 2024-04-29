@@ -466,10 +466,17 @@ const vm = createApp({
                         }
                     }
 
+                    function setBg() {
+                        const status = info.event.extendedProps.fields[vm.tabActive.field_status]
+                        if (status?.includes('กำลัง')) return 'bg-yellow-400'
+                        else if (status?.includes('เสร็จสิ้น')) return 'bg-green-400'
+                        else return 'bg-neutral-400 border-neutral-400'
+                    }
+
                     function initHtml() {
                         return info.event.extendedProps.fields[fieldCount] ? `
-                        <div class="flex flex-nowrap tooltip tooltip-${setTooltipPosition()} ring-2 ring-slate-500 ring-offset-2 outline-dotted outline-2 outline-offset-2" data-tip="${fieldCount} : ${info.event.extendedProps.fields[fieldCount]}"><span class="truncate">${info.event.title}</span></div>
-                    ` : `<div class="flex flex-nowrap cursor-default"><span class="truncate">${info.event.title}</span></div>`
+                        <div class="flex flex-nowrap tooltip tooltip-${setTooltipPosition()} ${setBg()} ring-2 ring-slate-500 ring-offset-2 outline-dotted outline-2 outline-offset-2" data-tip="${fieldCount} : ${info.event.extendedProps.fields[fieldCount]}"><span class="truncate">${info.event.title}</span></div>
+                    ` : `<div class="flex flex-nowrap cursor-default ring-2 ring-current ${setBg()}"><span class="truncate">${info.event.title}</span></div>`
                     }
 
                     return {
