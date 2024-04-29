@@ -280,17 +280,35 @@ const vm = createApp({
                     console.error(err);
                 });
         },
-        showGantt(g) {
+        async showGantt(g) {
+            const url = `https://api.airtable.com/v0/${g.base_id}/${g.table_id}`
+            const header = {
+                headers: `Authorization: Bearer ${this.user.airtable_token}`,
+            }
+
             if (!g) return
             this.tabActive = g;
             this.isLoading();
-
+            
             // Get table data
-            axios(`https://api.airtable.com/v0/${g.base_id}/${g.table_id}`, {
-                headers: `Authorization: Bearer ${this.user.airtable_token}`,
-            }).then((el) => {
+            try {
+                const fetchAll = async () => {
+                    const response = []
+
+                    while (1) {
+                        const result = await axios(response.length > 0 ? `${url}/?offset=${response[response.length - 1].offset}` : url, header)
+                        response.push(result.data)
+                        if (!result.data.offset) break;
+                    }
+                    return response.map(res => res.records).reduce((acc, curr) => {
+                        return acc.concat(curr);
+                    }, [])
+                }
+
+                const getAllResponse = await Promise.all([fetchAll()])
+
                 let groupBy
-                this.data = el.data.records.filter(record => record.fields[g.field_group || g.field_name])
+                this.data = getAllResponse[0].filter(record => record.fields[g.field_start])
                     .map((d) => {
                         const projectName = d.fields[g.field_name];
                         const blockStart = d.fields[g.field_start];
@@ -322,15 +340,16 @@ const vm = createApp({
                             fields: d.fields
                         };
                     });
+
                 this.isLoaded();
                 this.renderCalendar();
-            }).catch((err) => {
+            } catch (err) {
                 this.toast.fire({
                     icon: "error",
                     title: "เกิดข้อผิดพลาดระหว่างดึงข้อมูล at showGantt()"
                 });
                 console.error(err);
-            });
+            }
 
             // Get detail for field type
             axios(`https://api.airtable.com/v0/meta/bases/${g.base_id}/tables`, {
