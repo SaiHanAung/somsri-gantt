@@ -396,19 +396,21 @@ const vm = createApp({
                 eventColor: "#a52241",
                 eventBorderColor: '#fff',
                 eventClick: function (info) {
-                    clickCnt++
-                    if (clickCnt === 1) {
-                        setTimeout(function () {
+                    if (vm.tabActive.table_name.includes('MASTER')) {
+                        clickCnt++
+                        if (clickCnt === 1) {
+                            setTimeout(function () {
+                                clickCnt = 0
+                            }, 400)
+                        } else if (clickCnt === 2) {
                             clickCnt = 0
-                        }, 400)
-                    } else if (clickCnt === 2) {
-                        clickCnt = 0
-                        const { title, extendedProps: props } = info.event
-                        vm.viewProject.name = title
-                        vm.viewProject.fields = props.fields
-                        const modalId = document.getElementById('project_gantt')
-                        modalId.showModal()
-                        vm.renderProjectCalendar();
+                            const { title, extendedProps: props } = info.event
+                            vm.viewProject.name = title
+                            vm.viewProject.fields = props.fields
+                            const modalId = document.getElementById('project_gantt')
+                            modalId.showModal()
+                            vm.renderProjectCalendar();
+                        }
                     }
                 },
                 eventResize: async function (info) {
@@ -451,6 +453,32 @@ const vm = createApp({
 
                     vm.updateRecords();
                 },
+                eventContent: function (info) {
+                    const fieldCount = vm.tabActive.field_count
+                    const start = new Date(info.event.start).getDate()
+
+                    function setTooltipPosition() {
+                        if (start) {
+                            if ([1, 2].includes(start)) return 'right'
+                            else if ([29, 30, 31].includes(start)) return 'left'
+                            else return 'top'
+                        }
+                    }
+
+                    function initHtml() {
+                        return info.event.extendedProps.fields[fieldCount] ? `
+                        <div class="flex flex-nowrap tooltip tooltip-${setTooltipPosition()}" data-tip="${fieldCount} : ${info.event.extendedProps.fields[fieldCount]}"><span class="truncate">${info.event.title}</span></div>
+                    ` : `<div class="flex flex-nowrap cursor-default"><span class="truncate">${info.event.title}</span></div>`
+                    }
+
+                    return {
+                        html:
+                            !vm.tabActive.table_name.includes('MASTER')
+                                ? initHtml()
+                                : `<div class="flex flex-nowrap"><span class="truncate">${info.event.title}</span></div>`
+                    }
+
+                },
                 slotLabelContent: function (info) {
                     const data = vm.filteredData?.filter(f => new Date(f.start).getDate() === new Date(info.date).getDate())
                     const sumAmount = data?.reduce((acc, curr) => acc + (curr.fields[vm.tabActive.field_count] || 0), 0)
@@ -459,7 +487,7 @@ const vm = createApp({
                         html: `
                         <div class="gird text-center">
                             <p>${info.text}</p>
-                            ${sumAmount ? `<small class="font-normal tooltip cursor-pointer" data-tip="ยอดสั่งงาน">ยอด ${sumAmount || 0}</small>` : '&nbsp;'}
+                            ${sumAmount ? `<small class="font-normal tooltip" data-tip="ยอดสั่งงาน">ยอด ${sumAmount || 0}</small>` : '&nbsp;'}
                         </div>
                     ` }
                 }
@@ -467,6 +495,10 @@ const vm = createApp({
 
             calendar.setOption("locale", "th");
             calendar.render();
+            setTimeout(() => {
+                calendar.prev();
+                calendar.next();
+            }, 200);
 
             const spans = document.querySelectorAll('span.fc-datagrid-expander-placeholder');
             spans.forEach(span => {
