@@ -467,7 +467,7 @@ const vm = createApp({
 
                     function initHtml() {
                         return info.event.extendedProps.fields[fieldCount] ? `
-                        <div class="flex flex-nowrap tooltip tooltip-${setTooltipPosition()}" data-tip="${fieldCount} : ${info.event.extendedProps.fields[fieldCount]}"><span class="truncate">${info.event.title}</span></div>
+                        <div class="flex flex-nowrap tooltip tooltip-${setTooltipPosition()} ring-2 ring-slate-500 ring-offset-2 outline-dotted outline-2 outline-offset-2" data-tip="${fieldCount} : ${info.event.extendedProps.fields[fieldCount]}"><span class="truncate">${info.event.title}</span></div>
                     ` : `<div class="flex flex-nowrap cursor-default"><span class="truncate">${info.event.title}</span></div>`
                     }
 
