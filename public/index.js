@@ -65,9 +65,6 @@ const vm = createApp({
             filters: [],
         };
     },
-    components: {
-        'v-select': window['vue-select']
-    },
     methods: {
         resetUserInput() {
             this.user = {}
@@ -289,7 +286,7 @@ const vm = createApp({
             if (!g) return
             this.tabActive = g;
             this.isLoading();
-            
+
             // Get table data
             try {
                 const fetchAll = async () => {
@@ -406,8 +403,12 @@ const vm = createApp({
                         return ` 📅 ${thaiDate(start)} ถึง ${thaiDate(end)}`
                     }
 
-                    const { start, end } = info.resource._resource.extendedProps
-                    return { html: `${info.resource?.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small>` }
+                    const { start, end, fields } = info.resource._resource.extendedProps
+                    return {
+                        html: `
+                    ${!vm.tabActive.table_name.includes('MASTER') && `<small>#${fields[vm.tabActive.field_prefix]}</small><br>`} 
+                    <p class="indent-4">${info.resource?.title} <small class="text-[#a52241]">${sliceDate(start, end)}</small></p>`
+                    }
                 },
                 resourceOrder: "groupBy,start",
                 resourceGroupField: 'groupBy',
