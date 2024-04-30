@@ -478,8 +478,12 @@ const vm = createApp({
                     vm.updateRecords();
                 },
                 eventContent: function (info) {
+                    const { fields } = info.event.extendedProps
                     const fieldCount = vm.tabActive.field_count
                     const start = new Date(info.event.start).getDate()
+                    const startTime = new Date(info.event.start).getTime()
+                    const dueDateTime = new Date(fields[vm.tabActive.field_duedate]).getTime()
+                    const status = fields[vm.tabActive.field_status]
 
                     function setTooltipPosition() {
                         if (start) {
@@ -490,16 +494,24 @@ const vm = createApp({
                     }
 
                     function setBg() {
-                        const status = info.event.extendedProps.fields[vm.tabActive.field_status]
-                        if (status?.includes('กำลัง')) return 'bg-yellow-400'
-                        else if (status?.includes('เสร็จสิ้น')) return 'bg-green-400'
-                        else return 'bg-neutral-400 border-neutral-400'
+                        if (startTime < dueDateTime) {
+                            if (status?.includes('กำลัง')) return 'bg-yellow-500'
+                            else if (status?.includes('เสร็จสิ้น')) return 'bg-green-500'
+                            else return 'bg-neutral-500 border-neutral-500'
+                        } else {
+                            // if (status?.includes('เสร็จสิ้น')) return 'bg-green-500'
+                            return 'bg-red-500'
+                        }
+                    }
+
+                    function setTooltip() {
+                        return `tooltip tooltip-${setTooltipPosition()} ${setBg()}`
                     }
 
                     function initHtml() {
-                        return info.event.extendedProps.fields[fieldCount] ? `
-                        <div class="flex flex-nowrap tooltip tooltip-${setTooltipPosition()} ${setBg()} ring-2 ring-slate-500 ring-offset-2 outline-dotted outline-2 outline-offset-2" data-tip="${fieldCount} : ${info.event.extendedProps.fields[fieldCount]}"><span class="truncate">${info.event.title}</span></div>
-                    ` : `<div class="flex flex-nowrap cursor-default ring-2 ring-current ${setBg()}"><span class="truncate">${info.event.title}</span></div>`
+                        return fields[fieldCount] ? `
+                        <div class="flex flex-nowrap ${setTooltip()} ring-2 ring-slate-500 ring-offset-2 outline-dotted outline-2 outline-offset-2" data-tip="${fieldCount} : ${fields[fieldCount]} #สถานะ : ${status}"><span class="truncate">${info.event.title}</span></div>
+                    ` : `<div class="flex flex-nowrap cursor-default ring-2 ring-current ${setTooltip()}" data-tip="#สถานะ : ${status}"><span class="truncate">${info.event.title}</span></div>`
                     }
 
                     return {
