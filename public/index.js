@@ -478,12 +478,13 @@ const vm = createApp({
                     vm.updateRecords();
                 },
                 eventContent: function (info) {
-                    const { fields } = info.event.extendedProps
+                    const { fields, groupBy } = info.event.extendedProps
                     const fieldCount = vm.tabActive.field_count
                     const start = new Date(info.event.start).getDate()
                     const startTime = new Date(info.event.start).getTime()
                     const dueDateTime = new Date(fields?.[vm.tabActive?.field_duedate]).getTime()
                     const status = fields?.[vm.tabActive.field_status]
+                    const eventName = `${fields?.[vm.tabActive.field_eventName]}) ${groupBy?.split(". ")[1] || groupBy}`
 
                     function setTooltipPosition() {
                         if (start) {
@@ -510,8 +511,8 @@ const vm = createApp({
 
                     function initHtml() {
                         return fields[fieldCount] ? `
-                        <div class="flex flex-nowrap ${setTooltip()} ring-2 ring-slate-500 ring-offset-2 outline-dotted outline-2 outline-offset-2" data-tip="${fieldCount} : ${fields[fieldCount]} #สถานะ : ${status}"><span class="truncate">${info.event.title}</span></div>
-                    ` : `<div class="flex flex-nowrap cursor-default ring-2 ring-current ${setTooltip()}" data-tip="#สถานะ : ${status}"><span class="truncate">${info.event.title}</span></div>`
+                        <div class="flex flex-nowrap ${setTooltip()} ring-2 ring-slate-500 ring-offset-2 outline-dotted outline-2 outline-offset-2" data-tip="${fieldCount} : ${fields[fieldCount]} #สถานะ : ${status}"><span class="truncate">${eventName || undefined}</span></div>
+                    ` : `<div class="flex flex-nowrap cursor-default ring-2 ring-current ${setTooltip()}" data-tip="#สถานะ : ${status}"><span class="truncate">${eventName || undefined}</span></div>`
                     }
 
                     return {
