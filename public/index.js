@@ -482,8 +482,8 @@ const vm = createApp({
                     const fieldCount = vm.tabActive.field_count
                     const start = new Date(info.event.start).getDate()
                     const startTime = new Date(info.event.start).getTime()
-                    const dueDateTime = new Date(fields[vm.tabActive.field_duedate]).getTime()
-                    const status = fields[vm.tabActive.field_status]
+                    const dueDateTime = new Date(fields?.[vm.tabActive?.field_duedate]).getTime()
+                    const status = fields?.[vm.tabActive.field_status]
 
                     function setTooltipPosition() {
                         if (start) {
